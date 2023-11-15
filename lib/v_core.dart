@@ -39,9 +39,9 @@ export 'src/widgets/type_scale/underline_default_text_style.dart';
 export 'src/widgets/type_scale/type_scale_variant.dart';
 export 'src/widgets/type_scale/type_scale_text.dart';
 
-export 'src/widgets/inherited_scaffold/delegating_scaffold.dart';
-export 'src/widgets/inherited_scaffold/scaffold_behavior.dart';
-export 'src/widgets/inherited_scaffold/configurable_scaffold.dart';
+export 'src/widgets/inheriting_scaffold/delegating_scaffold.dart';
+export 'src/widgets/inheriting_scaffold/scaffold_behavior.dart';
+export 'src/widgets/inheriting_scaffold/inheriting_scaffold.dart';
 
 export 'src/widgets/reactive_text_field/delegating_reactive_text_field.dart';
 export 'src/widgets/reactive_text_field/configurable_reactive_text_field.dart';

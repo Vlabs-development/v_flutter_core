@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:v_core/v_core.dart';
 
-class ConfigurableScaffold extends HookConsumerWidget {
-  const ConfigurableScaffold({
+class InheritingScaffold extends HookConsumerWidget {
+  const InheritingScaffold({
     super.key,
     this.extendBody,
     this.extendBodyBehindAppBar,
