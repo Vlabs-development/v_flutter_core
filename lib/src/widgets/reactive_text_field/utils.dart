@@ -84,7 +84,7 @@ extension TextEditingControllerX on TextEditingController {
     });
   }
 
-  void setTextWithKeptSelection<K, T>(String? text) {
+  void setTextWithKeptSelection(String? text) {
     if (text == null) {
       this.text = '';
       return;
