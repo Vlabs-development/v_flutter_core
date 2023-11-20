@@ -34,7 +34,7 @@ export 'src/theme/utils.dart';
 export 'src/widgets/progress_button/progress_button.dart';
 export 'src/widgets/progress_button/button_variants.dart';
 
-export 'src/widgets/type_scale/upper_case_text.dart';
+export 'src/widgets/type_scale/upper_case_text.dart'; 
 export 'src/widgets/type_scale/underline_default_text_style.dart';
 export 'src/widgets/type_scale/type_scale_variant.dart';
 export 'src/widgets/type_scale/type_scale_text.dart';

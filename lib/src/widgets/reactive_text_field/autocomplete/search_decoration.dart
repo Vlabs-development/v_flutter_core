@@ -131,7 +131,7 @@ class SearchDecoration<K, T> extends HookWidget {
     return RawAutocompleteDecoration<K, T>(
       control: control,
       controller: effectiveController,
-      options: offlineFilteredOptions.flattened,
+      options: offlineFilteredOptions,
       onChanged: effectiveOnChanged,
       selectedKey: selectedKey,
       maxDropdownHeight: maxDropdownHeight,
@@ -139,6 +139,7 @@ class SearchDecoration<K, T> extends HookWidget {
       customWidget: customWidget,
       groupBuilder: groupBuilder,
       customBuilder: customBuilder,
+      jumpToFirstMatch: null,
       valueBuilder: (node, isSelected, isHighlighted, select) {
         if (valueBuilder != null) {
           return valueBuilder!(node, isSelected, isHighlighted, select);

@@ -102,6 +102,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     required this.valueBuilder,
     required this.listBuilder,
     required this.control,
+    this.jumpToFirstMatch,
     this.customBuilder,
     this.customWidget,
     this.onChanged,
@@ -116,12 +117,13 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
   final K? selectedKey;
   final void Function(CompositeValue<K, T>) onSelected;
   final void Function(TextEditingValue value)? onChanged;
-  final List<DepthCompositeNode<K, T>> options;
+  final CompositeNode<K, T> options;
   final FocusNode? focusNode;
   final TextEditingController? controller;
   final double maxDropdownHeight;
   final Widget? Function(String value)? customBuilder;
   final Widget? customWidget;
+  final String Function(T?)? jumpToFirstMatch;
   final Widget Function(DepthCompositeGroup<K, T> node, bool isHighlighted) groupBuilder;
   final Widget Function(
     DepthCompositeValue<K, T> node,
@@ -134,6 +136,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final optionsList = options.flattened;
     final inheritedController = context.requireExtension<ReactiveTextFieldBehavior>().controller;
     final effectiveController = controller ?? inheritedController ?? useTextEditingController();
 
@@ -145,21 +148,21 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     final highlightedKey = useValueNotifier<K?>(selectedKey);
 
     DepthCompositeNode<K, T>? currentlyHighlightedNode() {
-      if (options.isEmpty) {
+      if (optionsList.isEmpty) {
         return null;
       }
-      final indexOf = options.maybeIndexOf(key: highlightedKey.value);
+      final indexOf = optionsList.maybeIndexOf(key: highlightedKey.value);
 
       if (indexOf == null) {
         return null;
       }
 
-      return options[indexOf];
+      return optionsList[indexOf];
     }
 
     void highlightIndex(int index) {
       highlightedIndex.value = index;
-      final key = options.keyAt(index: highlightedIndex.value);
+      final key = optionsList.keyAt(index: highlightedIndex.value);
       highlightedKey.value = key;
     }
 
@@ -180,15 +183,15 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     }
 
     void moveSelectionUp({int delta = 1}) {
-      if (options.isEmpty) {
+      if (optionsList.isEmpty) {
         return;
       }
 
       final newIndex = (highlightedIndex.value - delta).moduloRange(
         min: 0,
-        max: options.length - 1,
+        max: optionsList.length - 1,
       );
-      if (options[newIndex].node.isGroup) {
+      if (optionsList[newIndex].node.isGroup) {
         return moveSelectionUp(delta: delta + 1);
       }
 
@@ -196,15 +199,15 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     }
 
     void moveSelectionDown({int delta = 1}) {
-      if (options.isEmpty) {
+      if (optionsList.isEmpty) {
         return;
       }
 
       final newIndex = (highlightedIndex.value + delta).moduloRange(
         min: 0,
-        max: options.length - 1,
+        max: optionsList.length - 1,
       );
-      if (options[newIndex].node.isGroup) {
+      if (optionsList[newIndex].node.isGroup) {
         return moveSelectionDown(delta: delta + 1);
       }
 
@@ -213,7 +216,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
 
     usePlainPostFrameEffect(
       () => effectiveController.triggerValueChanged(),
-      [options.uniqueIdentifier],
+      [optionsList.uniqueIdentifier],
     );
 
     final globalKey = useGlobalKey();
@@ -254,7 +257,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                   return [DepthCompositeNode(node: CompositeGroup.empty(), depth: 0)];
                 }
 
-                return options;
+                return optionsList;
               },
               onSelected: (optionNode) {
                 final option = optionNode.node as CompositeValue<K, T>?;
@@ -263,8 +266,8 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                 }
                 effectiveOnSelected();
               },
-              optionsViewBuilder: (context, _, options) {
-                final optionList = options.toList();
+              optionsViewBuilder: (context, _, optionsList) {
+                final optionList = optionsList.toList();
                 return Entry(
                   key: globalKey,
                   yOffset: -8,
@@ -306,7 +309,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
 
                           final height = extentBefore + extentInside + extentAfter;
 
-                          final roughItemHeight = height / options.length;
+                          final roughItemHeight = height / optionsList.length;
                           final itemStart = roughItemHeight * index;
                           final itemEnd = itemStart + roughItemHeight;
 
@@ -397,6 +400,29 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                         },
                         [],
                       );
+
+                      useOnChangeNotifierValueChanged(
+                        effectiveController,
+                        select: (controller) => controller.text,
+                        onChanged: (value) {
+                          if (jumpToFirstMatch == null) {
+                            return;
+                          }
+
+                          final firstKey = (options
+                                  .pruneByLabel(jumpToFirstMatch!, value, behavior: PruneByLabelBehavior.startsWith)
+                                  .flattened
+                                  .firstWhereOrNull((element) => element.node is CompositeValue<K, T>)
+                                  ?.node as CompositeValue<K, T>?)
+                              ?.key;
+
+                          final index = optionList.maybeIndexOf(key: firstKey);
+                          if (index != null) {
+                            highlightIndex(index);
+                          }
+                        },
+                      );
+
                       return Align(
                         alignment: Alignment.topLeft,
                         child: Material(

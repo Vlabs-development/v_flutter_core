@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:v_core/src/widgets/reactive_text_field/autocomplete/raw_autocomplete_decoration.dart';
 import 'package:v_core/v_core.dart';
+
+enum AsYouTypeBehavior { filter, jumpToFirstMatch }
+
+extension AsYouTypeBehaviorX on AsYouTypeBehavior {
+  bool get isFilter {
+    return switch (this) {
+      AsYouTypeBehavior.filter => true,
+      _ => false,
+    };
+  }
+
+  bool get isJumpToFirstMatch {
+    return switch (this) {
+      AsYouTypeBehavior.jumpToFirstMatch => true,
+      _ => false,
+    };
+  }
+}
 
 class AutocompleteDecoration<K, T> extends HookWidget {
   const AutocompleteDecoration({
@@ -20,6 +37,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     this.focusNode,
     this.depthLeftInset = 0.0,
     this.maxDropdownHeight = 400.0,
+    this.asYouTypeBehavior = AsYouTypeBehavior.filter,
     super.key,
   });
 
@@ -30,6 +48,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
   final String Function(T?) displayStringForOption;
   final double depthLeftInset;
   final double maxDropdownHeight;
+  final AsYouTypeBehavior asYouTypeBehavior;
   final FocusNode? focusNode;
   final Widget Function(DepthCompositeGroup<K, T> node, bool isHighlighted) groupBuilder;
   final Widget Function(DepthCompositeValue<K, T> node, bool isSelected, bool isHighlighted, void Function() select)?
@@ -92,9 +111,9 @@ class AutocompleteDecoration<K, T> extends HookWidget {
       () {
         final selection = effectiveController.selection;
         if (effectiveController.isEntirelySelected || !selection.isValid || !hasFinishedSelection.value) {
-          return options.flattened;
+          return options;
         } else {
-          return options.pruneByLabel(displayStringForOption, effectiveController.text).flattened;
+          return options.pruneByLabel(displayStringForOption, effectiveController.text);
         }
       },
       [
@@ -108,7 +127,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     return RawAutocompleteDecoration<K, T>(
       control: control,
       selectedKey: selectedKey,
-      options: filteredOptions,
+      options: asYouTypeBehavior.isFilter ? filteredOptions : options,
       onSelected: onSelected,
       maxDropdownHeight: maxDropdownHeight,
       customBuilder: customBuilder,
@@ -117,6 +136,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
       focusNode: effectiveFocusNode,
       controller: effectiveController,
       groupBuilder: groupBuilder,
+      jumpToFirstMatch: asYouTypeBehavior.isJumpToFirstMatch ? displayStringForOption : null,
       valueBuilder: (node, isSelected, isHighlighted, select) {
         if (valueBuilder != null) {
           return valueBuilder!(node, isSelected, isHighlighted, select);

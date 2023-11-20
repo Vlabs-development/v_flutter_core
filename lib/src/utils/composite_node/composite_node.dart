@@ -282,6 +282,8 @@ extension MapCompositeGroup<K, T> on CompositeGroup<K, T> {
   }
 }
 
+enum PruneByLabelBehavior { contains, startsWith }
+
 extension NullableCompositeNodeX<K, T> on CompositeNode<K, T>? {
   CompositeGroup<K, T> asGroup() {
     final _this = this;
@@ -344,14 +346,22 @@ extension NullableCompositeNodeX<K, T> on CompositeNode<K, T>? {
     return node.pruneTrunk(predicate);
   }
 
-  CompositeNode<K, T> pruneByLabel(String Function(T?) stringForOption, String label) {
+  CompositeNode<K, T> pruneByLabel(
+    String Function(T?) stringForOption,
+    String label, {
+    PruneByLabelBehavior behavior = PruneByLabelBehavior.contains,
+  }) {
     return pruneTrunk(
           (node) {
             return node.map(
               value: (value) {
                 final a = stringForOption(value.value).toLowerCase();
                 final b = label.toLowerCase();
-                return a.contains(b);
+
+                return switch (behavior) {
+                  PruneByLabelBehavior.contains => a.contains(b),
+                  PruneByLabelBehavior.startsWith => a.startsWith(b),
+                };
               },
               group: (group) => true,
             );
