@@ -96,7 +96,7 @@ class PortalDialog extends HookWidget {
                       return HookBuilder(
                         builder: (context) {
                           final animationController = useAnimationController(
-                            duration: Duration(milliseconds: 1000),
+                            duration: const Duration(milliseconds: 1000),
                             lowerBound: 0,
                             upperBound: 1,
                           );
@@ -104,22 +104,10 @@ class PortalDialog extends HookWidget {
                             animationController.forward();
                           });
 
-                          // return Card(
-                          //   child: portalFollower,
-                          // );
-
                           return SizeTransition(
                             axis: Axis.vertical,
-                            sizeFactor: AlwaysStoppedAnimation(0.17),
-                            // sizeFactor: animationController,
+                            sizeFactor: const AlwaysStoppedAnimation(0.17),
                             child: Card(
-                              child: portalFollower,
-                            ),
-                          );
-
-                          return Card(
-                            child: SizeTransition(
-                              sizeFactor: animationController,
                               child: portalFollower,
                             ),
                           );

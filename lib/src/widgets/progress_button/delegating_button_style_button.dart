@@ -20,8 +20,8 @@ class DelegatingButtonStyleButton extends ButtonStyleButton {
   });
 
   @override
-  ButtonStyle defaultStyleOf(BuildContext c) => variant.defaultStyleOf(c);
+  ButtonStyle defaultStyleOf(BuildContext context) => variant.defaultStyleOf(context);
 
   @override
-  ButtonStyle? themeStyleOf(BuildContext c) => variant.themeStyleOf(c);
+  ButtonStyle? themeStyleOf(BuildContext context) => variant.themeStyleOf(context);
 }

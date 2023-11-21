@@ -10,6 +10,7 @@ class ProgressButtonIndicator extends StatelessWidget {
     required this.circular,
     required this.resolve,
     this.strokeWidth = 2,
+    super.key,
   });
 
   final double strokeWidth;

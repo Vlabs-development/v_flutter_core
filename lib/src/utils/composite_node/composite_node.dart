@@ -265,20 +265,19 @@ extension MapCompositeGroup<K, T> on CompositeGroup<K, T> {
 
   CompositeNode<K, T> pruneByLabel(String label) {
     return pruneTrunk(
-          (node) {
-            return node.map(
-              value: (value) {
-                final a = defaultStringForOption(value.value).toLowerCase();
-                final b = label.toLowerCase();
-                return a.contains(b);
-              },
-              group: (group) {
-                return true;
-              },
-            );
+      (node) {
+        return node.map(
+          value: (value) {
+            final a = defaultStringForOption(value.value).toLowerCase();
+            final b = label.toLowerCase();
+            return a.contains(b);
           },
-        ) ??
-        CompositeGroup.empty();
+          group: (group) {
+            return true;
+          },
+        );
+      },
+    );
   }
 }
 
@@ -286,13 +285,13 @@ enum PruneByLabelBehavior { contains, startsWith }
 
 extension NullableCompositeNodeX<K, T> on CompositeNode<K, T>? {
   CompositeGroup<K, T> asGroup() {
-    final _this = this;
+    final node = this;
 
-    if (_this == null) {
+    if (node == null) {
       return CompositeGroup.empty();
     }
 
-    return _this.map(
+    return node.map(
       group: (group) => group,
       value: (value) => CompositeGroup.root(nodes: {value}),
     );
