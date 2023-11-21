@@ -1,4 +1,4 @@
-import 'package:v_core/src/utils/composite_node/composite_node.dart';
+import 'package:v_flutter_core/src/utils/composite_node/composite_node.dart';
 
 class DepthCompositeNode<K, T> {
   DepthCompositeNode({

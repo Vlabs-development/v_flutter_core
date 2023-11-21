@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_keys.dart';
+import 'package:v_flutter_core/src/hooks/use_keys.dart';
 
 GlobalKey useGlobalKey() => useState(GlobalKey()).value;
 

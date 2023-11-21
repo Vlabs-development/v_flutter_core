@@ -4,7 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:v_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
+import 'package:v_flutter_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 
 part 'reactive_text_field_style.tailor.dart';
 

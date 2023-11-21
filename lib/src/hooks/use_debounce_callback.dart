@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_cleanup.dart';
+import 'package:v_flutter_core/src/hooks/use_cleanup.dart';
 
 /// Returns a [VoidCallback] which debounces the [callback] by [duration].
 /// Many subsequent calls to the returned [VoidCallback] will only result in an actual `callback` invocation

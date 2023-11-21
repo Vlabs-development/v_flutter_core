@@ -1,5 +1,5 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_effect_hooks.dart';
+import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
 
 /// Calls [listener] when [value] changes. If [fireImmediately] is true (the default), [listener] is called immediately.
 void useValueListener<T>(

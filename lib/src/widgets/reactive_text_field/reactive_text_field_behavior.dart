@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:v_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
+import 'package:v_flutter_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 
 part 'reactive_text_field_behavior.tailor.dart';
 

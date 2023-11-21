@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:v_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
+import 'package:v_flutter_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 
 enum ThemeInterweaveStrategy {
   merge,

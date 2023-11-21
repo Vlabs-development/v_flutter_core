@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_keys.dart';
+import 'package:v_flutter_core/src/hooks/use_keys.dart';
 
 void useAsyncEffect(Future<Dispose?> Function() effect, [List<Object?>? keys, List<Listenable>? listenableKeys]) {
   useEffect(

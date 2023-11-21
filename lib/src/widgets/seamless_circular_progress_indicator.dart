@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_interval.dart';
+import 'package:v_flutter_core/src/hooks/use_interval.dart';
 
 class SeamlessCircularProgressIndicator extends HookWidget {
   const SeamlessCircularProgressIndicator({

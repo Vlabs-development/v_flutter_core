@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:v_core/src/widgets/reactive_text_field/autocomplete/raw_autocomplete_decoration.dart';
-import 'package:v_core/v_core.dart';
+import 'package:v_flutter_core/src/widgets/reactive_text_field/autocomplete/raw_autocomplete_decoration.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
 class SearchDecoration<K, T> extends HookWidget {
   const SearchDecoration({

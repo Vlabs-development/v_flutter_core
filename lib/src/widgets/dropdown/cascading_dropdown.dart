@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/v_core.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 import 'package:collection/collection.dart';
 
 void Function(Set<T> values)? convertToMultiOnChanged<T>(void Function(T? value)? onChanged) {

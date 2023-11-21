@@ -3,7 +3,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:v_core/v_core.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
 part 'scaffold_behavior.tailor.dart';
 

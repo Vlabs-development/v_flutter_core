@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:v_core/src/widgets/type_scale/type_scale_variant.dart';
-import 'package:v_core/src/widgets/type_scale/underline_default_text_style.dart';
+import 'package:v_flutter_core/src/widgets/type_scale/type_scale_variant.dart';
+import 'package:v_flutter_core/src/widgets/type_scale/underline_default_text_style.dart';
 
 class TypeScaleText extends Text {
   const TypeScaleText(

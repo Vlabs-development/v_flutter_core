@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:v_core/src/utils/composite_node/depth_composite_node.dart';
+import 'package:v_flutter_core/src/utils/composite_node/depth_composite_node.dart';
 
 Widget defaultWidgetForOption(Object? it) {
   return Text(defaultStringForOption(it));

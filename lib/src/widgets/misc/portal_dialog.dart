@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_portal/flutter_portal.dart';
-import 'package:v_core/src/hooks/use_effect_hooks.dart';
-import 'package:v_core/src/hooks/use_value_listener.dart';
-import 'package:v_core/src/widgets/misc/dismissible_portal_target.dart';
-import 'package:v_core/src/widgets/size_reporter.dart';
+import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
+import 'package:v_flutter_core/src/hooks/use_value_listener.dart';
+import 'package:v_flutter_core/src/widgets/misc/dismissible_portal_target.dart';
+import 'package:v_flutter_core/src/widgets/size_reporter.dart';
 
 class PortalDialog extends HookWidget {
   const PortalDialog({

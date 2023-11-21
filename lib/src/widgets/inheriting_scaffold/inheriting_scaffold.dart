@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:v_core/v_core.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
 class InheritingScaffold extends HookConsumerWidget {
   const InheritingScaffold({

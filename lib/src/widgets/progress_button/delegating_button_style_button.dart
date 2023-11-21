@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:v_core/src/widgets/progress_button/button_variants.dart';
+import 'package:v_flutter_core/src/widgets/progress_button/button_variants.dart';
 
 class DelegatingButtonStyleButton extends ButtonStyleButton {
   final ButtonVariant variant;

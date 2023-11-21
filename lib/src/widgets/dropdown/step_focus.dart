@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/use_effect_hooks.dart';
+import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
 
 /// This is a workaround widget, because wrapping [MenuItemButton] in a [Focus] (to add autfocus: true)
 /// results in an unwanted side effect of not having a focus effect at all.

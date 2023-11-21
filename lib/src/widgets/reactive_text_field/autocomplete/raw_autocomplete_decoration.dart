@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:reactive_forms/reactive_forms.dart';
-import 'package:v_core/v_core.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
 Widget defaultGroupAutocompleteBuilder(DepthCompositeGroup<dynamic, dynamic> node, bool isHighlighted) {
   return Builder(

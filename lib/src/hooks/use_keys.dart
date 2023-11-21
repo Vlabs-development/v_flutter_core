@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:v_core/src/hooks/change_notifier_hooks.dart';
+import 'package:v_flutter_core/src/hooks/change_notifier_hooks.dart';
 
 /// Ensure that this is not called with different number of keys across builds.
 int useListenableKeys(List<Listenable>? listenableKeys) {
