@@ -97,7 +97,7 @@ class CompositeValue<K, T> implements CompositeNode<K, T> {
   String toString() => 'CompositeValue(value: $value)';
 }
 
-extension ListX<V> on List<V> {
+extension CompositeNodeListExtensions<V> on List<V> {
   CompositeGroup<V, V> get asCompositeNode {
     final result = CompositeGroup<V, V>.root(nodes: <CompositeNode<V, V>>{});
 

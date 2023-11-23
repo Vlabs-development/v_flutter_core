@@ -52,7 +52,7 @@ class FilledTonalVariant extends ButtonVariant {
   ButtonStyle? themeStyleOf(BuildContext context) => context.filledTonalThemeStyle(context);
 }
 
-extension BuildContextX on BuildContext {
+extension Material3ButtonStyles on BuildContext {
   static const _elevated = ElevatedButton(onPressed: null, child: Text(''));
   ButtonStyle elevatedDefaultStyle(BuildContext context) => _elevated.defaultStyleOf(context);
   ButtonStyle? elevatedThemeStyle(BuildContext context) => _elevated.themeStyleOf(context);

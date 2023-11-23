@@ -2,7 +2,7 @@
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-extension AsyncValueX<T> on AsyncValue<T> {
+extension CoreAsyncValueExtensions<T> on AsyncValue<T> {
   AsyncValue<T> get toLoading {
     final _value = value;
     if (_value != null) {
