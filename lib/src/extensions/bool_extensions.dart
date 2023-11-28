@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 
-extension BoolX on bool {
+extension CoreBoolExtensions on bool {
   void when({VoidCallback? t, VoidCallback? f}) {
     if (this) {
       t?.call();

@@ -11,9 +11,12 @@ export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_interval.dart';
 export 'src/hooks/hooks.dart';
 
-export 'src/utils/bool_extensions.dart';
-export 'src/utils/function_extensions.dart';
-export 'src/utils/async_value_extensions.dart';
+export 'src/extensions/bool_extensions.dart';
+export 'src/extensions/function_extensions.dart';
+export 'src/extensions/list_extensions.dart';
+export 'src/extensions/async_value_extensions.dart';
+export 'src/extensions/build_context_extensions.dart';
+
 export 'src/widgets/size_reporter.dart';
 export 'src/widgets/seamless_circular_progress_indicator.dart';
 export 'src/widgets/misc/always_scrollbar.dart';
@@ -29,12 +32,11 @@ export 'src/utils/composite_node/depth_composite_node.dart';
 
 export 'src/theme/mergeable_theme_extension/interweave_mergeable_theme_extension.dart';
 export 'src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
-export 'src/theme/utils.dart';
 
 export 'src/widgets/progress_button/progress_button.dart';
 export 'src/widgets/progress_button/button_variants.dart';
 
-export 'src/widgets/type_scale/upper_case_text.dart'; 
+export 'src/widgets/type_scale/upper_case_text.dart';
 export 'src/widgets/type_scale/underline_default_text_style.dart';
 export 'src/widgets/type_scale/type_scale_variant.dart';
 export 'src/widgets/type_scale/type_scale_text.dart';
