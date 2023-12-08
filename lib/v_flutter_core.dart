@@ -11,6 +11,7 @@ export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_interval.dart';
 export 'src/hooks/hooks.dart';
 
+export 'src/extensions/time_of_day_extensions.dart';
 export 'src/extensions/bool_extensions.dart';
 export 'src/extensions/function_extensions.dart';
 export 'src/extensions/list_extensions.dart';
