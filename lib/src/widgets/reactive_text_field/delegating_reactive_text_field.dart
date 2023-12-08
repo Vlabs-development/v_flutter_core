@@ -1,8 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
+import 'package:reactive_forms/reactive_forms.dart' hide ReactiveTextField;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:v_flutter_core/src/widgets/reactive_text_field/reactive_text_field.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 class DelegatingReactiveTextField<T> extends HookConsumerWidget {
@@ -97,6 +98,7 @@ class DelegatingReactiveTextField<T> extends HookConsumerWidget {
         selectionHeightStyle: theme.selectionHeightStyle ?? BoxHeightStyle.tight,
         selectionWidthStyle: theme.selectionWidthStyle ?? BoxWidthStyle.tight,
         showCursor: behavior.showCursor,
+        showErrorTextWhenEmpty: behavior.showErrorTextWhenEmpty ?? true,
         smartDashesType: behavior.smartDashesType,
         smartQuotesType: behavior.smartQuotesType,
         spellCheckConfiguration: behavior.spellCheckConfiguration,
@@ -123,6 +125,7 @@ class DelegatingReactiveTextField<T> extends HookConsumerWidget {
           errorMaxLines: behavior.errorMaxLines,
           errorStyle: theme.errorStyle,
           errorText: behavior.errorText,
+          error: behavior.error,
           fillColor: theme.fillColor,
           filled: theme.filled,
           floatingLabelAlignment: theme.floatingLabelAlignment,

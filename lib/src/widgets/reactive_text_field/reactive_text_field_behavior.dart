@@ -26,6 +26,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
     this.readOnly,
     this.scribbleEnabled,
     this.showCursor,
+    this.showErrorTextWhenEmpty,
     this.contentInsertionConfiguration,
     this.dragStartBehavior,
     this.scrollPadding,
@@ -58,6 +59,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
     // InputDecoration
     this.suffixIcon,
     this.errorMaxLines,
+    this.error,
     this.helperMaxLines,
     this.counterText,
     this.helperText,
@@ -92,6 +94,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
   final bool? readOnly;
   final bool? scribbleEnabled;
   final bool? showCursor;
+  final bool? showErrorTextWhenEmpty;
   final int? minLines;
   final int? maxLines;
   final ContentInsertionConfiguration? contentInsertionConfiguration;
@@ -130,6 +133,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
   // InputDecoration
   final Widget? suffixIcon;
   final int? errorMaxLines;
+  final Widget? error;
   final int? helperMaxLines;
   final String? counterText;
   final String? helperText;
@@ -175,6 +179,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
       isCollapsed: isCollapsed ?? other.isCollapsed,
       //
       showCursor: showCursor ?? other.showCursor,
+      showErrorTextWhenEmpty: showErrorTextWhenEmpty ?? other.showErrorTextWhenEmpty,
       minLines: minLines ?? other.minLines,
       maxLines: maxLines ?? other.maxLines,
       contentInsertionConfiguration: contentInsertionConfiguration ?? other.contentInsertionConfiguration,
@@ -205,6 +210,7 @@ class ReactiveTextFieldBehavior extends MergeableThemeExtension<ReactiveTextFiel
       focusNode: focusNode ?? other.focusNode,
       suffixIcon: suffixIcon ?? other.suffixIcon,
       errorMaxLines: errorMaxLines ?? other.errorMaxLines,
+      error: error ?? other.error,
       helperMaxLines: helperMaxLines ?? other.helperMaxLines,
       counterText: counterText ?? other.counterText,
       helperText: helperText ?? other.helperText,
