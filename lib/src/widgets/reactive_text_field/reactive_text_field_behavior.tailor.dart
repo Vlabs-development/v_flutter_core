@@ -21,6 +21,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
   bool? get readOnly;
   bool? get scribbleEnabled;
   bool? get showCursor;
+  bool? get showErrorTextWhenEmpty;
   int? get minLines;
   int? get maxLines;
   ContentInsertionConfiguration? get contentInsertionConfiguration;
@@ -57,6 +58,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
   FocusNode? get focusNode;
   Widget? get suffixIcon;
   int? get errorMaxLines;
+  Widget? get error;
   int? get helperMaxLines;
   String? get counterText;
   String? get helperText;
@@ -91,6 +93,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
     bool? readOnly,
     bool? scribbleEnabled,
     bool? showCursor,
+    bool? showErrorTextWhenEmpty,
     int? minLines,
     int? maxLines,
     ContentInsertionConfiguration? contentInsertionConfiguration,
@@ -128,6 +131,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
     FocusNode? focusNode,
     Widget? suffixIcon,
     int? errorMaxLines,
+    Widget? error,
     int? helperMaxLines,
     String? counterText,
     String? helperText,
@@ -163,6 +167,8 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       readOnly: readOnly ?? this.readOnly,
       scribbleEnabled: scribbleEnabled ?? this.scribbleEnabled,
       showCursor: showCursor ?? this.showCursor,
+      showErrorTextWhenEmpty:
+          showErrorTextWhenEmpty ?? this.showErrorTextWhenEmpty,
       minLines: minLines ?? this.minLines,
       maxLines: maxLines ?? this.maxLines,
       contentInsertionConfiguration:
@@ -199,6 +205,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       focusNode: focusNode ?? this.focusNode,
       suffixIcon: suffixIcon ?? this.suffixIcon,
       errorMaxLines: errorMaxLines ?? this.errorMaxLines,
+      error: error ?? this.error,
       helperMaxLines: helperMaxLines ?? this.helperMaxLines,
       counterText: counterText ?? this.counterText,
       helperText: helperText ?? this.helperText,
@@ -244,6 +251,8 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       readOnly: t < 0.5 ? readOnly : other.readOnly,
       scribbleEnabled: t < 0.5 ? scribbleEnabled : other.scribbleEnabled,
       showCursor: t < 0.5 ? showCursor : other.showCursor,
+      showErrorTextWhenEmpty:
+          t < 0.5 ? showErrorTextWhenEmpty : other.showErrorTextWhenEmpty,
       minLines: t < 0.5 ? minLines : other.minLines,
       maxLines: t < 0.5 ? maxLines : other.maxLines,
       contentInsertionConfiguration: t < 0.5
@@ -285,6 +294,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       focusNode: t < 0.5 ? focusNode : other.focusNode,
       suffixIcon: t < 0.5 ? suffixIcon : other.suffixIcon,
       errorMaxLines: t < 0.5 ? errorMaxLines : other.errorMaxLines,
+      error: t < 0.5 ? error : other.error,
       helperMaxLines: t < 0.5 ? helperMaxLines : other.helperMaxLines,
       counterText: t < 0.5 ? counterText : other.counterText,
       helperText: t < 0.5 ? helperText : other.helperText,
@@ -334,6 +344,8 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
                 .equals(scribbleEnabled, other.scribbleEnabled) &&
             const DeepCollectionEquality()
                 .equals(showCursor, other.showCursor) &&
+            const DeepCollectionEquality()
+                .equals(showErrorTextWhenEmpty, other.showErrorTextWhenEmpty) &&
             const DeepCollectionEquality().equals(minLines, other.minLines) &&
             const DeepCollectionEquality().equals(maxLines, other.maxLines) &&
             const DeepCollectionEquality().equals(contentInsertionConfiguration,
@@ -394,6 +406,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
                 .equals(suffixIcon, other.suffixIcon) &&
             const DeepCollectionEquality()
                 .equals(errorMaxLines, other.errorMaxLines) &&
+            const DeepCollectionEquality().equals(error, other.error) &&
             const DeepCollectionEquality()
                 .equals(helperMaxLines, other.helperMaxLines) &&
             const DeepCollectionEquality()
@@ -418,8 +431,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
             const DeepCollectionEquality().equals(prefix, other.prefix) &&
             const DeepCollectionEquality()
                 .equals(prefixIcon, other.prefixIcon) &&
-            const DeepCollectionEquality()
-                .equals(prefixText, other.prefixText) &&
+            const DeepCollectionEquality().equals(prefixText, other.prefixText) &&
             const DeepCollectionEquality().equals(semanticCounterText, other.semanticCounterText) &&
             const DeepCollectionEquality().equals(suffix, other.suffix) &&
             const DeepCollectionEquality().equals(suffixText, other.suffixText));
@@ -440,6 +452,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       const DeepCollectionEquality().hash(readOnly),
       const DeepCollectionEquality().hash(scribbleEnabled),
       const DeepCollectionEquality().hash(showCursor),
+      const DeepCollectionEquality().hash(showErrorTextWhenEmpty),
       const DeepCollectionEquality().hash(minLines),
       const DeepCollectionEquality().hash(maxLines),
       const DeepCollectionEquality().hash(contentInsertionConfiguration),
@@ -473,6 +486,7 @@ mixin _$ReactiveTextFieldBehaviorTailorMixin
       const DeepCollectionEquality().hash(focusNode),
       const DeepCollectionEquality().hash(suffixIcon),
       const DeepCollectionEquality().hash(errorMaxLines),
+      const DeepCollectionEquality().hash(error),
       const DeepCollectionEquality().hash(helperMaxLines),
       const DeepCollectionEquality().hash(counterText),
       const DeepCollectionEquality().hash(helperText),
