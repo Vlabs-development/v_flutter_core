@@ -98,7 +98,10 @@ class AutocompleteDecoration<K, T> extends HookWidget {
           effectiveController.selectAll();
           hasFinishedSelection.value = true;
         } else {
-          hasFinishedSelection.value = false;
+          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            applySelectedValueToField();
+            hasFinishedSelection.value = false;
+          });
         }
       },
       [options, selectedKey],
