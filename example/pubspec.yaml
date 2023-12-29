@@ -1,0 +1,29 @@
+name: example
+description: Example project for v_flutter_core
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+  hooks_riverpod: ^2.4.9
+  flutter_hooks: ^0.20.3
+  v_flutter_core:
+    path: "../"
+  reactive_forms: ^16.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
