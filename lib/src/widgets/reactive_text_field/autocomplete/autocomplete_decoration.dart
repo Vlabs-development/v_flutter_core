@@ -70,7 +70,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
 
     final hasFinishedSelection = useValueNotifier(false);
 
-    void applySelectedValueToField() {
+    void onSelectedKeyChange() {
       if (selectedValue != null) {
         final displayValue = displayStringForOption(selectedValue?.value);
         control.patchValue(selectedKey);
@@ -83,11 +83,25 @@ class AutocompleteDecoration<K, T> extends HookWidget {
           effectiveController.setTextWithKeptSelection(displayValue);
           effectiveController.triggerValueChanged();
         }
+      } else {
+        if (!effectiveFocusNode.hasFocus) {
+          effectiveController.clear();
+          control.value = null;
+        }
+      }
+    }
+
+    void clearAfterFocusLostIfSelectedValueIsNull() {
+      if (selectedValue == null) {
+        effectiveController.clear();
+        control.value = null;
+      } else {
+        onSelectedKeyChange();
       }
     }
 
     usePlainPostFrameEffect(
-      () => applySelectedValueToField(),
+      () => onSelectedKeyChange(),
       [selectedKey],
     );
 
@@ -99,7 +113,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
           hasFinishedSelection.value = true;
         } else {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-            applySelectedValueToField();
+            clearAfterFocusLostIfSelectedValueIsNull();
             hasFinishedSelection.value = false;
           });
         }
