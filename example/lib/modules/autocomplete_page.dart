@@ -21,7 +21,8 @@ class AutocompletePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return const GapColumn(
+      gap: 16,
       mainAxisSize: MainAxisSize.min,
       children: [
         FieldRow(clearBehavior: CompositeNodeFieldClearBehavior.none),
@@ -45,8 +46,19 @@ class FieldRow extends StatelessWidget {
     return HookBuilder(
       builder: (context) {
         final selectedKey = useState<String?>('15:30');
+        final focusNode = useFocusNode();
 
-        return Row(
+        useIsFocusedFor(
+          focusNode,
+          const Duration(seconds: 3),
+          () {
+            debugPrint('Setting value to 16:30');
+            selectedKey.value = '16:30';
+          },
+        );
+
+        return GapRow(
+          gap: 16,
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
@@ -54,12 +66,13 @@ class FieldRow extends StatelessWidget {
               child: const Text('✍️ 16:00'),
             ),
             ElevatedButton(
-              onPressed: () => selectedKey.value = 'almafa',
-              child: const Text('✍️ almafa'),
+              onPressed: () => selectedKey.value = 'INVALID',
+              child: const Text('✍️ INVALID'),
             ),
             Expanded(
               child: ShowcaseAutocompleteField<String, TimeOfDay>(
                 clearBehavior: clearBehavior,
+                focusNode: focusNode,
                 maxDropdownHeight: 300,
                 displayStringForOption: (timeOfDay) => timeOfDay != null ? formatTimeOfDay(timeOfDay) : '',
                 valueBuilder: (node, isSelected, isHighlighted, select) {

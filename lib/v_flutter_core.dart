@@ -9,6 +9,7 @@ export 'src/hooks/use_value_listener.dart';
 export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_interval.dart';
+export 'src/hooks/use_focus_node_hooks.dart';
 export 'src/hooks/hooks.dart';
 
 export 'src/extensions/time_of_day_extensions.dart';
