@@ -43,6 +43,7 @@ class ShowcaseAutocompleteField<K, T> extends HookWidget {
     this.validators = const [],
     this.clearBehavior = CompositeNodeFieldClearBehavior.empty,
     this.showErrors = defaultShowErrors,
+    this.decorate,
     super.key,
   })  : displayStringForOption = displayStringForOption ?? defaultStringForOption,
         assert(
@@ -50,6 +51,7 @@ class ShowcaseAutocompleteField<K, T> extends HookWidget {
           'When T ($T) is not a String? then displayStringForOption must be provided.',
         );
 
+  final Widget Function(Widget field, FormControl<K> control)? decorate;
   final String Function(T? option) displayStringForOption;
   final CompositeGroup<K, T> options;
   final K? selectedKey;
@@ -105,6 +107,7 @@ class ShowcaseAutocompleteField<K, T> extends HookWidget {
       setValueWhenLabelMatches: setValueWhenLabelMatches,
       validationMessages: validationMessages,
       showErrors: showErrors,
+      decorate: decorate,
     );
   }
 }
@@ -127,6 +130,7 @@ class ShowcaseAutocompleteFormField<K, T> extends HookWidget {
     this.clearBehavior = CompositeNodeFieldClearBehavior.none,
     this.showErrors = defaultShowErrors,
     this.validationMessages = const {},
+    this.decorate,
     super.key,
   })  : displayStringForOption = displayStringForOption ?? defaultStringForOption,
         assert(
@@ -154,6 +158,7 @@ class ShowcaseAutocompleteFormField<K, T> extends HookWidget {
   final FormControl<K>? formControl;
   final ShowErrorsFunction<K> showErrors;
   final String? formControlName;
+  final Widget Function(Widget field, FormControl<K> control)? decorate;
   final Map<String, String Function(Object)> validationMessages;
 
   @override
@@ -185,36 +190,40 @@ class ShowcaseAutocompleteFormField<K, T> extends HookWidget {
         clearBehavior: clearBehavior,
       ),
       decorate: (field, control) {
-        return ApplyThemeExtension(
-          theme: ReactiveTextFieldBehavior(
-            onTapOutside: (pointerEvent) {
-              effectiveFocusNode.unfocus();
-            },
+        final effectiveDecorate = decorate ?? identityDecorate;
+        return effectiveDecorate(
+          ApplyThemeExtension(
+            theme: ReactiveTextFieldBehavior(
+              onTapOutside: (pointerEvent) {
+                effectiveFocusNode.unfocus();
+              },
+            ),
+            child: HookBuilder(
+              builder: (context) {
+                return AutocompleteDecoration<K, T>(
+                  control: control,
+                  focusNode: effectiveFocusNode,
+                  asYouTypeBehavior: AsYouTypeBehavior.jumpToFirstMatch,
+                  displayStringForOption: displayStringForOption,
+                  customBuilder: customBuilder,
+                  groupBuilder: groupBuilder,
+                  valueBuilder: valueBuilder,
+                  customWidget: customWidget,
+                  maxDropdownHeight: maxDropdownHeight,
+                  listBuilder: defaultListBuilder,
+                  selectedKey: control.value,
+                  onSelected: (node) {
+                    control.patchValue(node?.key);
+                    control.markAsDirty();
+                  },
+                  depthLeftInset: 12,
+                  options: options,
+                  child: field,
+                );
+              },
+            ),
           ),
-          child: HookBuilder(
-            builder: (context) {
-              return AutocompleteDecoration<K, T>(
-                control: control,
-                focusNode: effectiveFocusNode,
-                asYouTypeBehavior: AsYouTypeBehavior.jumpToFirstMatch,
-                displayStringForOption: displayStringForOption,
-                customBuilder: customBuilder,
-                groupBuilder: groupBuilder,
-                valueBuilder: valueBuilder,
-                customWidget: customWidget,
-                maxDropdownHeight: maxDropdownHeight,
-                listBuilder: defaultListBuilder,
-                selectedKey: control.value,
-                onSelected: (node) {
-                  control.patchValue(node?.key);
-                  control.markAsDirty();
-                },
-                depthLeftInset: 12,
-                options: options,
-                child: field,
-              );
-            },
-          ),
+          control,
         );
       },
     );

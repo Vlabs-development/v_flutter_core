@@ -18,6 +18,7 @@ dependencies:
   v_flutter_core:
     path: "../"
   reactive_forms: ^16.1.1
+  mask_text_input_formatter: ^2.7.0
 
 dev_dependencies:
   flutter_test:

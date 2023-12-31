@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 import 'package:collection/collection.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 final timeValues = {
   CompositeValue(key: '15:15', value: const TimeOfDay(hour: 15, minute: 15)),
@@ -48,15 +49,6 @@ class FieldRow extends StatelessWidget {
         final selectedKey = useState<String?>('15:30');
         final focusNode = useFocusNode();
 
-        useIsFocusedFor(
-          focusNode,
-          const Duration(seconds: 3),
-          () {
-            debugPrint('Setting value to 16:30');
-            selectedKey.value = '16:30';
-          },
-        );
-
         return GapRow(
           gap: 16,
           mainAxisSize: MainAxisSize.min,
@@ -79,6 +71,21 @@ class FieldRow extends StatelessWidget {
                   return _valueBuilder(select, isHighlighted, node, isSelected);
                 },
                 options: CompositeGroup.root(nodes: timeValues),
+                decorate: (field, control) {
+                  return ApplyThemeExtension(
+                    theme: ReactiveTextFieldBehavior(inputFormatters: [
+                      MaskTextInputFormatter.eager(
+                        mask: "&#:!#",
+                        filter: {
+                          "&": RegExp(r'[0-2]'),
+                          "!": RegExp(r'[0-5]'),
+                          "#": RegExp(r'[0-9]'),
+                        },
+                      ),
+                    ]),
+                    child: field,
+                  );
+                },
                 onSelected: (value) {
                   selectedKey.value = value;
                   final rangeKey = timeValues.firstWhereOrNull((e) => e.key == value)?.value;

@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:example/modules/input/showcase_field/showcase_field_decoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -5,7 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
-Widget _identityDecorationBuilder<T>(Widget field, FormControl<T> control) => field;
+Widget identityDecorate<T>(Widget field, FormControl<T> control) => field;
 
 class ShowcaseFormField<T extends Object?> extends HookWidget {
   const ShowcaseFormField({
@@ -78,8 +80,8 @@ class ShowcaseFormField<T extends Object?> extends HookWidget {
             builder: (context) {
               return HookBuilder(
                 builder: (context) {
-                  final _decorationBuilder = decorate ?? _identityDecorationBuilder;
-                  return _decorationBuilder(
+                  final effectiveDecorate = decorate ?? identityDecorate;
+                  return effectiveDecorate(
                     ConfigurableReactiveTextField<T>(
                       helperText: helper.isEmpty ? null : helper,
                       hintText: hint.isEmpty ? null : hint,
