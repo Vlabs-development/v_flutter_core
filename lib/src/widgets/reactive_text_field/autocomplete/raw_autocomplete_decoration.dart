@@ -160,7 +160,13 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
       return optionsList[indexOf];
     }
 
+    final isMounted = useIsMounted();
+
     void highlightIndex(int index) {
+      if (!isMounted()) {
+        return;
+      }
+
       highlightedIndex.value = index;
       final key = optionsList.keyAt(index: highlightedIndex.value);
       highlightedKey.value = key;
@@ -401,26 +407,28 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                         [],
                       );
 
+                      void onControllerTextChange(String value) {
+                        if (jumpToFirstMatch == null) {
+                          return;
+                        }
+
+                        final firstKey = (options
+                                .pruneByLabel(jumpToFirstMatch!, value, behavior: PruneByLabelBehavior.startsWith)
+                                .flattened
+                                .firstWhereOrNull((element) => element.node is CompositeValue<K, T>)
+                                ?.node as CompositeValue<K, T>?)
+                            ?.key;
+
+                        final index = optionList.maybeIndexOf(key: firstKey);
+                        if (index != null) {
+                          highlightIndex(index);
+                        }
+                      }
+
                       useOnChangeNotifierValueChanged(
                         effectiveController,
                         select: (controller) => controller.text,
-                        onChanged: (value) {
-                          if (jumpToFirstMatch == null) {
-                            return;
-                          }
-
-                          final firstKey = (options
-                                  .pruneByLabel(jumpToFirstMatch!, value, behavior: PruneByLabelBehavior.startsWith)
-                                  .flattened
-                                  .firstWhereOrNull((element) => element.node is CompositeValue<K, T>)
-                                  ?.node as CompositeValue<K, T>?)
-                              ?.key;
-
-                          final index = optionList.maybeIndexOf(key: firstKey);
-                          if (index != null) {
-                            highlightIndex(index);
-                          }
-                        },
+                        onChanged: onControllerTextChange,
                       );
 
                       return Align(
