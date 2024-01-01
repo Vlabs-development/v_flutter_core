@@ -69,6 +69,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     final effectiveController = inheritedController ?? useTextEditingController();
 
     final hasFinishedSelection = useValueNotifier(false);
+    final isMounted = useIsMounted();
 
     void onSelectedKeyChange() {
       if (selectedValue != null) {
@@ -92,11 +93,13 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     }
 
     void clearAfterFocusLostIfSelectedValueIsNull() {
-      if (selectedValue == null) {
-        effectiveController.clear();
-        control.value = null;
-      } else {
-        onSelectedKeyChange();
+      if (isMounted()) {
+        if (selectedValue == null) {
+          effectiveController.clear();
+          control.value = null;
+        } else {
+          onSelectedKeyChange();
+        }
       }
     }
 
@@ -113,8 +116,10 @@ class AutocompleteDecoration<K, T> extends HookWidget {
           hasFinishedSelection.value = true;
         } else {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-            clearAfterFocusLostIfSelectedValueIsNull();
-            hasFinishedSelection.value = false;
+            if (isMounted()) {
+              clearAfterFocusLostIfSelectedValueIsNull();
+              hasFinishedSelection.value = false;
+            }
           });
         }
       },

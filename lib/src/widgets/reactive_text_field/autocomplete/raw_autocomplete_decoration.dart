@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:collection/collection.dart';
 import 'package:entry/entry.dart';
 import 'package:flutter/material.dart';
@@ -142,6 +144,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
 
     final effectiveFocusNode = focusNode ?? useFocusNode();
     final fieldWidth = useValueNotifier(0.0);
+    final availableSpaceBelow = useValueNotifier<double?>(null);
 
     final scrollOffset = useValueNotifier(0.0);
     final highlightedIndex = useValueNotifier(-1);
@@ -228,7 +231,10 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     final globalKey = useGlobalKey();
 
     return SizeReporter(
-      onChange: (size, offset) => fieldWidth.value = size.width,
+      onChange: (size, offset) {
+        fieldWidth.value = size.width;
+        availableSpaceBelow.value = MediaQuery.sizeOf(context).height - ((offset?.dy ?? 0) + size.height);
+      },
       child: HookBuilder(
         builder: (context) {
           return ApplyThemeExtension(
@@ -437,7 +443,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                           type: MaterialType.transparency,
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxHeight: maxDropdownHeight,
+                              maxHeight: math.min(maxDropdownHeight, (availableSpaceBelow.value ?? maxDropdownHeight)),
                               maxWidth: useValueListenable(fieldWidth),
                             ),
                             child: HookBuilder(
