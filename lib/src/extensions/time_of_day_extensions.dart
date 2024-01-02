@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
 extension TimeOfDayExtension on TimeOfDay {
-  bool isBefore(TimeOfDay other) {
+  bool isBefore(TimeOfDay other, {bool inclusive = false}) {
+    if (inclusive) {
+      return toMinutes() < other.toMinutes() || isAt(other);
+    }
+
     return toMinutes() < other.toMinutes();
   }
 
-  bool isAfter(TimeOfDay other) {
+  bool isAfter(TimeOfDay other, {bool inclusive = false}) {
+    if (inclusive) {
+      return toMinutes() > other.toMinutes() || isAt(other);
+    }
+
     return toMinutes() > other.toMinutes();
   }
 
