@@ -26,6 +26,7 @@ export 'src/widgets/misc/maybe_align.dart';
 export 'src/widgets/misc/dismissible_portal_target.dart';
 export 'src/widgets/misc/portal_dialog.dart';
 export 'src/widgets/misc/wide.dart';
+export 'src/widgets/misc/debug_container.dart';
 
 export 'src/widgets/flex/gap_column.dart';
 export 'src/widgets/flex/gap_flex.dart';
