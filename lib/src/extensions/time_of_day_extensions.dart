@@ -166,6 +166,14 @@ TimeOfDay parseTimeOfDay(String timeOfDayString) {
   return TimeOfDay(hour: hour, minute: minute);
 }
 
+TimeOfDay? safeParseTimeOfDay(String timeOfDayString) {
+  try {
+    return parseTimeOfDay(timeOfDayString);
+  } catch (e) {
+    return null;
+  }
+}
+
 String formatTimeOfDay(TimeOfDay timeOfDay) {
   return '${timeOfDay.hour.toString().padLeft(2, '0')}:${timeOfDay.minute.toString().padLeft(2, '0')}';
 }
