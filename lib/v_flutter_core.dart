@@ -38,6 +38,7 @@ export 'src/utils/type_checks.dart';
 export 'src/utils/composite_node/composite_node.dart';
 export 'src/utils/composite_node/composite_node_value_accessor.dart';
 export 'src/utils/composite_node/depth_composite_node.dart';
+export 'src/utils/text_input_formatters/round_to_next_time_of_day_formatter.dart';
 
 export 'src/theme/mergeable_theme_extension/interweave_mergeable_theme_extension.dart';
 export 'src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
