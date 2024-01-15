@@ -5,6 +5,12 @@ import 'package:v_flutter_core/v_flutter_core.dart';
 
 const _visibilityChangeEventName = 'visibilitychange';
 
+extension HtmlDocumentX on HtmlDocument {
+  /// Used to workaround this issue: https://github.com/dint-dev/universal_html/issues/93
+  // ignore: invalid_null_aware_operator
+  String get nonNullableVisibilityState => document?.visibilityState ?? '';
+}
+
 enum TabVisibilityChangeEvent { hidden, visible }
 
 extension TabVisibilityChangeEventFromString on String {
@@ -37,7 +43,7 @@ class TabVisibilityChangeRecognizer extends HookWidget {
 
   void _internalOnVisibilityChange(Event _) {
     try {
-      final event = document.visibilityState.toTabVisibilityChangeEvent();
+      final event = document.nonNullableVisibilityState.toTabVisibilityChangeEvent();
       onVisibilityChange(event);
     } catch (e) {
       debugPrint(e.toString());
