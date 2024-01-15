@@ -5,11 +5,11 @@ typedef TypedValidatorFunction<T> = Map<String, dynamic>? Function(
 );
 
 class TypedDelegateValidator<T> extends Validator<T> {
-  final TypedValidatorFunction<T> _validator;
 
   const TypedDelegateValidator(TypedValidatorFunction<T> validator)
       : _validator = validator,
         super();
+  final TypedValidatorFunction<T> _validator;
 
   @override
   Map<String, dynamic>? validate(AbstractControl<T> control) {

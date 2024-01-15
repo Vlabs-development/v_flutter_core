@@ -19,14 +19,6 @@ import 'package:reactive_forms/reactive_forms.dart';
 /// A [ReactiveForm] ancestor is required.
 ///
 class ReactiveTextField<T> extends ReactiveFormField<T, String> {
-  final TextEditingController? _textController;
-
-  static Widget _defaultContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
-    return AdaptiveTextSelectionToolbar.editableText(
-      editableTextState: editableTextState,
-    );
-  }
-
   /// Creates a [ReactiveTextField] that contains a [TextField].
   ///
   /// Can optionally provide a [formControl] to bind this widget to a control.
@@ -91,13 +83,13 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
   /// For documentation about the various parameters, see the [TextField] class
   /// and [TextField], the constructor.
   ReactiveTextField({
-    Key? key,
-    String? formControlName,
-    FormControl<T>? formControl,
-    Map<String, ValidationMessageFunction>? validationMessages,
-    ControlValueAccessor<T, String>? valueAccessor,
-    ShowErrorsFunction<T>? showErrors,
-    FocusNode? focusNode,
+    super.key,
+    super.formControlName,
+    super.formControl,
+    super.validationMessages,
+    super.valueAccessor,
+    super.showErrors,
+    super.focusNode,
     InputDecoration decoration = const InputDecoration(),
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
@@ -159,18 +151,12 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
     bool showErrorTextWhenEmpty = true,
   })  : _textController = controller,
         super(
-          key: key,
-          formControl: formControl,
-          formControlName: formControlName,
-          valueAccessor: valueAccessor,
-          validationMessages: validationMessages,
-          showErrors: showErrors,
-          focusNode: focusNode,
           builder: (ReactiveFormFieldState<T, String> field) {
             final state = field as _ReactiveTextFieldState<T>;
             final effectiveDecoration = decoration.applyDefaults(Theme.of(state.context).inputDecorationTheme);
-            final errorText =
-                !showErrorTextWhenEmpty && (state.errorText != null && state.errorText!.isEmpty) ? null : state.errorText;
+            final errorText = !showErrorTextWhenEmpty && (state.errorText != null && state.errorText!.isEmpty)
+                ? null
+                : state.errorText;
 
             return TextField(
               controller: state._textController,
@@ -239,6 +225,13 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
             );
           },
         );
+  final TextEditingController? _textController;
+
+  static Widget _defaultContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
+    return AdaptiveTextSelectionToolbar.editableText(
+      editableTextState: editableTextState,
+    );
+  }
 
   @override
   ReactiveFormFieldState<T, String> createState() => _ReactiveTextFieldState<T>();
@@ -285,6 +278,6 @@ class _ReactiveTextFieldState<T> extends ReactiveFocusableFormFieldState<T, Stri
     final currentWidget = widget as ReactiveTextField<T>;
     _textController =
         (currentWidget._textController != null) ? currentWidget._textController! : TextEditingController();
-    _textController.text = initialValue == null ? '' : initialValue.toString();
+    _textController.text = initialValue ?? '';
   }
 }

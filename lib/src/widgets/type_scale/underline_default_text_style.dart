@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 
 class UnderlinedDefaultTextStyle extends StatelessWidget {
   const UnderlinedDefaultTextStyle({required this.child, super.key});

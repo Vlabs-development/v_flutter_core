@@ -1,14 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/src/widgets/progress_button/button_variants.dart';
 import 'package:v_flutter_core/src/widgets/progress_button/delegating_button_style_button.dart';
 import 'package:v_flutter_core/src/widgets/size_reporter.dart';
 
 class ProgressButton extends HookWidget {
-  final bool isLoading;
-  final ButtonVariant variant;
-
   const ProgressButton.variant({
     super.key,
     required this.onPressed,
@@ -105,6 +103,9 @@ class ProgressButton extends HookWidget {
     this.statesController,
     required this.child,
   }) : variant = const FilledTonalVariant();
+  
+  final bool isLoading;
+  final ButtonVariant variant;
 
   final Widget child;
   final VoidCallback? onPressed;
@@ -162,7 +163,7 @@ class ProgressButton extends HookWidget {
         if (isCircular) {
           if (isLoading) {
             return defaultStyle.copyWith(
-              padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
+              padding: const MaterialStatePropertyAll(EdgeInsets.zero),
               shape: const MaterialStatePropertyAll(CircleBorder()),
             );
           } else {

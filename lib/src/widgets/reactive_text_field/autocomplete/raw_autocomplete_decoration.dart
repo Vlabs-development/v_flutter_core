@@ -50,7 +50,7 @@ Widget defaultValueAutocompleteBuilder<K, T>({
 
 extension DepthCompositeNodeListX<K, T> on List<DepthCompositeNode<K, T>> {
   int get uniqueIdentifier {
-    final it = map((e) => e.node.map(value: (v) => v.key, group: (g) => g.label)).join('').hashCode;
+    final it = map((e) => e.node.map(value: (v) => v.key, group: (g) => g.label)).join().hashCode;
     return it;
   }
 
@@ -185,7 +185,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
       if (paramNode != null) {
         onSelected(paramNode);
       } else {
-        final implicitNode = currentlyHighlightedNode()?.node as CompositeValue<K, T>;
+        final implicitNode = currentlyHighlightedNode()!.node as CompositeValue<K, T>;
         onSelected(implicitNode);
       }
       clearHighlight();
@@ -274,7 +274,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
               onSelected: (optionNode) {
                 final option = optionNode.node as CompositeValue<K, T>?;
                 if (option == null) {
-                  throw "Selected option is not a CompositeNode<$T> node.";
+                  throw 'Selected option is not a CompositeNode<$T> node.';
                 }
                 effectiveOnSelected();
               },
@@ -345,23 +345,29 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                         [index],
                       );
 
-                      usePlainPostFrameEffect(() {
-                        if (highlightedIndex.value == -1) {
-                          if (selectedKey != null) {
-                            highlightSelectedKeyIfCanBeFound();
-                          } else {
-                            highlightFirstValue();
+                      usePlainPostFrameEffect(
+                        () {
+                          if (highlightedIndex.value == -1) {
+                            if (selectedKey != null) {
+                              highlightSelectedKeyIfCanBeFound();
+                            } else {
+                              highlightFirstValue();
+                            }
                           }
-                        }
-                      }, [selectedKey, optionList.uniqueIdentifier]);
+                        },
+                        [selectedKey, optionList.uniqueIdentifier],
+                      );
 
-                      usePlainPostFrameEffect(() {
-                        if (highlightedIndex.value != -1) {
-                          if (selectedKey != null) {
-                            highlightSelectedKeyIfCanBeFound();
+                      usePlainPostFrameEffect(
+                        () {
+                          if (highlightedIndex.value != -1) {
+                            if (selectedKey != null) {
+                              highlightSelectedKeyIfCanBeFound();
+                            }
                           }
-                        }
-                      }, [selectedKey]);
+                        },
+                        [selectedKey],
+                      );
 
                       usePlainPostFrameEffect(
                         () {
@@ -443,7 +449,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
                           type: MaterialType.transparency,
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxHeight: math.min(maxDropdownHeight, (availableSpaceBelow.value ?? maxDropdownHeight)),
+                              maxHeight: math.min(maxDropdownHeight, availableSpaceBelow.value ?? maxDropdownHeight),
                               maxWidth: useValueListenable(fieldWidth),
                             ),
                             child: HookBuilder(

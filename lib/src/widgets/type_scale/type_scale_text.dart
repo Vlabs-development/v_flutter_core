@@ -32,10 +32,10 @@ class TypeScaleText extends Text {
         builder: (context) {
           final defaultStyle = DefaultTextStyle.of(context).style;
 
-          final hasUnderline = (defaultStyle.decoration?.contains(TextDecoration.underline) ?? false);
+          final hasUnderline = defaultStyle.decoration?.contains(TextDecoration.underline) ?? false;
           final hasStyleColor = style?.color != null;
           assert(!(hasUnderline && hasStyleColor),
-              "If underline is specified then color must be null, so the underlined distance can be drawn properly using transparent font and the shadow mimicing the actual text. See: https://stackoverflow.com/a/64839295/4074227.");
+              'If underline is specified then color must be null, so the underlined distance can be drawn properly using transparent font and the shadow mimicing the actual text. See: https://stackoverflow.com/a/64839295/4074227.',);
 
           if (hasUnderline) {
             return UnderlinedFixingDefaultTextStyle(child: Builder(builder: (context) => super.build(context)));

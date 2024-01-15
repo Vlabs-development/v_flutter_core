@@ -83,15 +83,13 @@ class SizedBy extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = useValueNotifier(const Size(0, 0));
+    final size = useValueNotifier(Size.zero);
 
     return Stack(
       alignment: Alignment.center,
       children: [
         ExcludeFocus(
-          excluding: true,
           child: IgnorePointer(
-            ignoring: true,
             child: Opacity(
               opacity: 0,
               child: SizeReporter(
@@ -101,7 +99,7 @@ class SizedBy extends HookWidget {
             ),
           ),
         ),
-        HookBuilder(builder: (context) => builder(useValueListenable(size)))
+        HookBuilder(builder: (context) => builder(useValueListenable(size))),
       ],
     );
   }

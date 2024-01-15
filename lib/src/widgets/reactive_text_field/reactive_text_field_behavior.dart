@@ -285,8 +285,8 @@ void Function(String, Map<String, dynamic>)? mergeAppPrivateCommandHandler(
   if (b == null) {
     return a;
   }
-  return (_, __) {
-    a(_, __);
-    b(_, __);
+  return (p1, p2) {
+    a(p1, p2);
+    b(p1, p2);
   };
 }

@@ -1,14 +1,39 @@
-include: package:flutter_lints/flutter.yaml
+include: package:lint/strict.yaml
 
 analyzer:
-  language:
-    strict-casts: true
-    strict-inference: true
-    strict-raw-types: true
-
   exclude:
-    - "**/*.gform.dart"
+    - /**/config/config_values.dart
+    - /**/common/firebase_options.dart
+    - /**/common/firebase_options.prod.dart
+    - /**/generated_plugin_registrant.dart
+    - /**/generated/**
+    - /**/__generated/**
+    - /**/*.freezed.dart
+    - /**/*.gr.dart
+    - /**/*.g.dart
+    - /**/main.widgetbook.dart
+    - /**/*.gql.dart
+    - /**/*.gql.g.dart
+
+  # TODO: enabling this causes a lot of errors, but it's probably a good idea to fix them
+  # language:
+  #   strict-casts: true
+  #   strict-raw-types: true
+
+  errors:
+    unused_import: warning
+    unnecessary_import: warning
+    invalid_annotation_target: ignore
+    # https://stackoverflow.com/questions/72423594/how-to-apply-the-same-analysis-options-yaml-to-a-set-of-sibling-flutter-projec
+    # this is ignored because we decided not to have to root folder as an actual "dart project" with dependencies and all that.
+    include_file_not_found: ignore
+    no_leading_underscores_for_local_identifiers: ignore
 
 linter:
   rules:
-    no_leading_underscores_for_local_identifiers: false
+    depend_on_referenced_packages: false
+    avoid_classes_with_only_static_members: false
+    sort_constructors_first: true
+    prefer_single_quotes: true
+    avoid_bool_literals_in_conditional_expressions: false
+    avoid_positional_boolean_parameters: false

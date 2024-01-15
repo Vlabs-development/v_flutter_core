@@ -3,7 +3,7 @@ import 'package:v_flutter_core/v_flutter_core.dart';
 
 class SeparatedColumn extends StatelessWidget {
   const SeparatedColumn({
-    Key? key,
+    super.key,
     required this.children,
     required this.separator,
     this.mainAxisAlignment = MainAxisAlignment.start,
@@ -13,7 +13,7 @@ class SeparatedColumn extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.clipBehavior = Clip.none,
-  }) : super(key: key);
+  });
 
   final List<Widget> children;
   final Widget separator;

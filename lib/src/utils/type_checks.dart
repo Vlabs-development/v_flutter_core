@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_catching_errors
+
 bool isStringType<T>() => typesEqual<String, T>();
 bool isDynamic<T>() => typesEqual<dynamic, T>();
 bool isNullableStringType<T>() => typesEqual<String?, T>() || typesEqual<String, T>();

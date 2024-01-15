@@ -157,7 +157,7 @@ Widget _defaultErrorBuilder(BuildContext context, Object? error) {
       padding: const EdgeInsets.all(16),
       child: Builder(
         builder: (context) {
-          String message = error.toString();
+          final String message = error.toString();
 
           return Text(message, textAlign: TextAlign.center);
         },

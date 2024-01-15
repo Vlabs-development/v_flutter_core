@@ -4,7 +4,7 @@ import 'package:v_flutter_core/v_flutter_core.dart';
 
 class GapRow extends StatelessWidget {
   const GapRow({
-    Key? key,
+    super.key,
     required this.children,
     required this.gap,
     this.mainAxisAlignment = MainAxisAlignment.start,
@@ -14,7 +14,7 @@ class GapRow extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.clipBehavior = Clip.none,
-  }) : super(key: key);
+  });
 
   final List<Widget> children;
   final double gap;
