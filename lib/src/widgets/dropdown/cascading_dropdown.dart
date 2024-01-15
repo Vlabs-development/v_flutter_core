@@ -1,7 +1,7 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
-import 'package:collection/collection.dart';
 
 void Function(Set<T> values)? convertToMultiOnChanged<T>(void Function(T? value)? onChanged) {
   if (onChanged == null) {
@@ -44,9 +44,12 @@ class CascadingDropdown<K, T> extends HookWidget {
     bool closeOnActivate = false,
     bool showLeading = true,
     Widget Function(CompositeGroup<K, T>? parentNode, CompositeValue<K, T> compositeValue, double width)? valueBuilder,
-    Widget Function(CompositeGroup<K, T>? parentNode, CompositeGroup<K, T> compositeGroup, List<Widget> mappedChildren,
-            double width)?
-        groupBuilder,
+    Widget Function(
+      CompositeGroup<K, T>? parentNode,
+      CompositeGroup<K, T> compositeGroup,
+      List<Widget> mappedChildren,
+      double width,
+    )? groupBuilder,
     super.key,
   })  : valueBuilder = valueBuilder ??
             _defaultValueBuilder(
@@ -80,14 +83,14 @@ class CascadingDropdown<K, T> extends HookWidget {
               closeOnActivate: closeOnActivate,
               allowMultiple: false,
               selectedKeys: {
-                ...{selectedKey}.whereType<K>()
+                ...{selectedKey}.whereType<K>(),
               },
               onChanged: convertToMultiOnChanged(onChanged),
               displayWidgetForOption: displayWidgetForOption,
             ),
         groupBuilder = groupBuilder ?? _defaultGroupBuilder(),
         selectedKeys = {
-          ...{selectedKey}.whereType<K>()
+          ...{selectedKey}.whereType<K>(),
         },
         allowMultiple = false;
 
@@ -97,8 +100,12 @@ class CascadingDropdown<K, T> extends HookWidget {
   final double? maxHeight;
   final Widget Function(CompositeGroup<K, T>? parentNode, CompositeValue<K, T> compositeValue, double width)
       valueBuilder;
-  final Widget Function(CompositeGroup<K, T>? parentNode, CompositeGroup<K, T> compositeGroup,
-      List<Widget> mappedChildren, double width) groupBuilder;
+  final Widget Function(
+    CompositeGroup<K, T>? parentNode,
+    CompositeGroup<K, T> compositeGroup,
+    List<Widget> mappedChildren,
+    double width,
+  ) groupBuilder;
   final bool alignStart;
   final bool isExpanded;
   final bool allowMultiple;
@@ -132,7 +139,7 @@ class CascadingDropdown<K, T> extends HookWidget {
               },
             )
             .map<Widget>((it) => Directionality(textDirection: TextDirection.ltr, child: Container(child: it)))
-            .mapIndexed((index, it) => index == 0 && selectedKey == null ? StepFocus(child: it) : it)
+            .mapIndexed((index, it) => index == 0 && selectedKey == null ? StepFocus(child: it) : it),
       ];
     }
 
@@ -166,7 +173,6 @@ class CascadingDropdown<K, T> extends HookWidget {
                   await Future<void>.delayed(const Duration(milliseconds: 500));
                   autoExpand.value = false;
                 },
-                anchorTapClosesMenu: false,
                 builder: (context, controller, child) {
                   return Directionality(
                     textDirection: TextDirection.ltr,
@@ -294,7 +300,6 @@ Widget Function(CompositeGroup<K, T>?, CompositeValue<K, T>, double width) _defa
                 child: AbsorbPointer(child: effectiveLeading()),
               ),
               Flexible(
-                flex: 1,
                 child: DefaultTextStyle(
                   style: TextStyle(color: effectiveColor(context)),
                   child: displayWidgetForOption(compositeValue.value),

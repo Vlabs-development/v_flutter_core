@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:universal_html/html.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
-import "package:universal_html/html.dart";
 
 const _visibilityChangeEventName = 'visibilitychange';
 
@@ -20,10 +20,10 @@ extension TabVisibilityChangeEventFromString on String {
   }
 }
 
-/// > "This event fires with a `visibilityState` of `hidden` when a user navigates to a new page, 
-/// switches tabs, closes the tab, minimizes or closes the browser, 
+/// > "This event fires with a `visibilityState` of `hidden` when a user navigates to a new page,
+/// switches tabs, closes the tab, minimizes or closes the browser,
 /// or, on mobile, switches from the browser to a different app."
-/// 
+///
 /// quoted from: https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event
 class TabVisibilityChangeRecognizer extends HookWidget {
   const TabVisibilityChangeRecognizer({

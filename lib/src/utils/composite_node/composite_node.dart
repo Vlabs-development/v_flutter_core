@@ -30,9 +30,9 @@ class CompositeGroup<K, T> implements CompositeNode<K, T> {
   });
   CompositeGroup.root({
     required this.nodes,
-  }) : label = "";
+  }) : label = '';
   CompositeGroup.empty()
-      : label = "",
+      : label = '',
         nodes = {};
 
   factory CompositeGroup.map(Map<K, T> map, {String? label = ''}) => map.toCompositeNode(label: label);

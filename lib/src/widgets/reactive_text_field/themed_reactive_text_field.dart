@@ -13,8 +13,10 @@ class ThemedReactiveTextField<T> extends HookWidget {
     this.formControl,
     this.formControlName,
     super.key,
-  }) : assert((formControlName != null && formControl == null) || (formControlName == null && formControl != null),
-            'Must provide a formControlName or a formControl, but not both at the same time.');
+  }) : assert(
+          (formControlName != null && formControl == null) || (formControlName == null && formControl != null),
+          'Must provide a formControlName or a formControl, but not both at the same time.',
+        );
 
   final ShowErrorsFunction<T> showErrors;
   final String? formControlName;

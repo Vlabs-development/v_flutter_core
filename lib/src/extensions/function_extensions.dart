@@ -6,7 +6,7 @@ extension CoreFn0Extensions<R> on R Function()? {
   R Function()? when(bool condition) => condition ? this : null;
   R Function()? whenPredicate(bool Function() condition) => condition() ? this : null;
   R Function()? whenNotNull(dynamic arg) => when(arg != null);
-  R Function()? hook(Function hook) => this == null
+  R Function()? hook(Function() hook) => this == null
       ? null
       : () {
           hook();

@@ -1,9 +1,10 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 class ConfigurableReactiveTextField<T> extends HookConsumerWidget {

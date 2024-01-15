@@ -53,11 +53,14 @@ class DismissiblePortalTarget extends HookWidget {
                       controller: controller,
                       child: HookBuilder(
                         builder: (context) {
-                          useScrollNotificationObserver(context, handler: (notification) {
-                            if (notification is UserScrollNotification) {
-                              onOutsideScroll?.call();
-                            }
-                          });
+                          useScrollNotificationObserver(
+                            context,
+                            handler: (notification) {
+                              if (notification is UserScrollNotification) {
+                                onOutsideScroll?.call();
+                              }
+                            },
+                          );
                           return SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height + 100,

@@ -138,7 +138,6 @@ class SearchDecoration<K, T> extends HookWidget {
       customWidget: customWidget,
       groupBuilder: groupBuilder,
       customBuilder: customBuilder,
-      jumpToFirstMatch: null,
       valueBuilder: (node, isSelected, isHighlighted, select) {
         if (valueBuilder != null) {
           return valueBuilder!(node, isSelected, isHighlighted, select);

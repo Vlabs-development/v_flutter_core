@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:v_flutter_core/src/widgets/size_reporter.dart';
 
 class ProgressButtonIndicator extends StatelessWidget {

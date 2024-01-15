@@ -97,15 +97,12 @@ class PortalDialog extends HookWidget {
                         builder: (context) {
                           final animationController = useAnimationController(
                             duration: const Duration(milliseconds: 1000),
-                            lowerBound: 0,
-                            upperBound: 1,
                           );
                           usePlainEffectOnce(() {
                             animationController.forward();
                           });
 
                           return SizeTransition(
-                            axis: Axis.vertical,
                             sizeFactor: const AlwaysStoppedAnimation(0.17),
                             child: Card(
                               child: portalFollower,
@@ -158,7 +155,7 @@ class _KeepWithinViewport extends StatelessWidget {
           final yOffset = offset?.dy ?? 0;
 
           if (yOffset < 0) {
-            final negativeVerticalOverflow = (yOffset / size.height);
+            final negativeVerticalOverflow = yOffset / size.height;
             return negativeVerticalOverflow * -1;
           }
           if (yOffset + size.height > viewportHeight) {
@@ -172,7 +169,7 @@ class _KeepWithinViewport extends StatelessWidget {
           final xOffset = offset?.dx ?? 0;
 
           if (xOffset < 0) {
-            final negativeHorizontalOverflow = (xOffset / size.width);
+            final negativeHorizontalOverflow = xOffset / size.width;
             return negativeHorizontalOverflow * -1;
           }
           if (xOffset + size.width > viewportWidth) {

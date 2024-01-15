@@ -24,12 +24,12 @@ extension AbstractControlX<T> on AbstractControl<T> {
   void markAllAsDirty() {
     if (this is FormGroup) {
       final formGroup = this as FormGroup;
-      for (var control in formGroup.controls.values) {
+      for (final control in formGroup.controls.values) {
         control.markAllAsDirty();
       }
     } else if (this is FormArray) {
       final formArray = this as FormArray;
-      for (var control in formArray.controls) {
+      for (final control in formArray.controls) {
         control.markAllAsDirty();
       }
     } else {
@@ -40,7 +40,7 @@ extension AbstractControlX<T> on AbstractControl<T> {
   void focusFirstErroneous() {
     if (this is FormGroup) {
       final formGroup = this as FormGroup;
-      for (var control in formGroup.controls.values) {
+      for (final control in formGroup.controls.values) {
         if (control.invalid) {
           control.focusFirstErroneous();
           return;
@@ -48,7 +48,7 @@ extension AbstractControlX<T> on AbstractControl<T> {
       }
     } else if (this is FormArray) {
       final formArray = this as FormArray;
-      for (var control in formArray.controls) {
+      for (final control in formArray.controls) {
         if (control.invalid) {
           control.focusFirstErroneous();
           return;
@@ -63,7 +63,7 @@ extension AbstractControlX<T> on AbstractControl<T> {
 }
 
 extension FormGroupX on FormGroup {
-  bool validate({required Function onSuccess}) {
+  bool validate({required Function() onSuccess}) {
     if (valid) {
       onSuccess();
       return true;

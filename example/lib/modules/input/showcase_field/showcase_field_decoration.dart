@@ -11,10 +11,10 @@ abstract class ShowcaseFieldDecorationWidget<T> extends StatefulWidget {
   Widget build(BuildContext context, FormControl<T> control);
 
   @override
-  _ShowcaseFieldDecorationWidgetState<T> createState() => _ShowcaseFieldDecorationWidgetState();
+  ShowcaseFieldDecorationWidgetState<T> createState() => ShowcaseFieldDecorationWidgetState();
 }
 
-class _ShowcaseFieldDecorationWidgetState<T> extends State<ShowcaseFieldDecorationWidget> {
+class ShowcaseFieldDecorationWidgetState<T> extends State<ShowcaseFieldDecorationWidget> {
   @override
   Widget build(BuildContext context) {
     return HookConsumer(

@@ -24,14 +24,14 @@ VoidCallback useDebounceCallback({
 }
 
 class CancelableDebouncedVoidCallback {
-  final VoidCallback callback;
-  final Duration duration;
-  final String tag;
-
   CancelableDebouncedVoidCallback({
     required this.callback,
     this.duration = const Duration(milliseconds: 300),
-  }) : tag = 'CancelableDebouncedVoidCallback-${DateTime.now().microsecondsSinceEpoch.toString()}';
+  }) : tag = 'CancelableDebouncedVoidCallback-${DateTime.now().microsecondsSinceEpoch}';
+
+  final VoidCallback callback;
+  final Duration duration;
+  final String tag;
 
   void call() => EasyDebounce.debounce(
         tag,

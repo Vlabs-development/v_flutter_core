@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_catching_errors
+
 import 'package:flutter/material.dart';
 
 abstract class MergeableThemeExtension<T extends ThemeExtension<T>> extends ThemeExtension<T> {
