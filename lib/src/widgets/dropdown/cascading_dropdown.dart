@@ -114,7 +114,10 @@ class CascadingDropdown<K, T> extends HookWidget {
   Widget build(BuildContext context) {
     List<Widget> getMenuItems({required bool autoExpand, double width = double.infinity}) {
       final selectedKey = selectedKeys.firstOrNull;
-      final path = options.pathToNode(selectedKey) ?? [];
+      List<CompositeNode<K, T>> path = [];
+      if (selectedKey != null) {
+        path = options.pathToNode(selectedKey) ?? [];
+      }
 
       return [
         ...options

@@ -11,7 +11,7 @@ class CompositeNodeValueAccessor<K, T> extends ControlValueAccessor<K, String> {
     this.clearBehavior = CompositeNodeFieldClearBehavior.none,
   });
 
-  final String Function(T?) getDisplayString;
+  final String Function(T) getDisplayString;
   final CompositeGroup<K, T> options;
   final bool setWhenViewMatchesDisplayValue;
   final CompositeNodeFieldClearBehavior clearBehavior;
@@ -20,7 +20,13 @@ class CompositeNodeValueAccessor<K, T> extends ControlValueAccessor<K, String> {
   bool get clearWhenChanged => clearBehavior == CompositeNodeFieldClearBehavior.changed;
 
   @override
-  String? modelToViewValue(K? modelValue) => getDisplayString(options.findByKey(modelValue)?.value);
+  String? modelToViewValue(K? modelValue) {
+    final value = options.findByKey(modelValue)?.value;
+    if (value != null) {
+      return getDisplayString(value);
+    }
+    return null;
+  }
 
   @override
   K? viewToModelValue(String? viewValue) {

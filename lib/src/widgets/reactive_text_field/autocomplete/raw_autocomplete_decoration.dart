@@ -30,7 +30,7 @@ Widget defaultValueAutocompleteBuilder<K, T>({
   required bool isSelected,
   required bool isHighlighted,
   required void Function() select,
-  required String Function(T?) displayStringForOption,
+  required String Function(T) displayStringForOption,
 }) =>
     Builder(
       builder: (context) {
@@ -125,7 +125,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
   final double maxDropdownHeight;
   final Widget? Function(String value)? customBuilder;
   final Widget? customWidget;
-  final String Function(T?)? jumpToFirstMatch;
+  final String Function(T)? jumpToFirstMatch;
   final Widget Function(DepthCompositeGroup<K, T> node, bool isHighlighted) groupBuilder;
   final Widget Function(
     DepthCompositeValue<K, T> node,
