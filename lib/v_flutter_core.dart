@@ -1,4 +1,3 @@
-
 export 'src/extensions/async_value_extensions.dart';
 export 'src/extensions/bool_extensions.dart';
 export 'src/extensions/build_context_extensions.dart';
@@ -8,7 +7,9 @@ export 'src/extensions/time_of_day_extensions.dart';
 
 export 'src/hooks/change_notifier_hooks.dart';
 export 'src/hooks/hooks.dart';
+export 'src/hooks/use_animated_list.dart';
 export 'src/hooks/use_async_effect_hooks.dart';
+export 'src/hooks/use_chained_animation_controller.dart';
 export 'src/hooks/use_cleanup.dart';
 export 'src/hooks/use_debounce_callback.dart';
 export 'src/hooks/use_effect_hooks.dart';
@@ -27,6 +28,9 @@ export 'src/utils/composite_node/depth_composite_node.dart';
 export 'src/utils/text_input_formatters/round_to_next_time_of_day_formatter.dart';
 export 'src/utils/type_checks.dart';
 
+export 'src/widgets/animation/animated_collapse.dart';
+export 'src/widgets/animation/animated_collapse_and_opacity.dart';
+export 'src/widgets/animation/size_then_fade_transition.dart';
 export 'src/widgets/dropdown/cascading_dropdown.dart';
 export 'src/widgets/dropdown/cascading_dropdown_theme.dart';
 export 'src/widgets/dropdown/step_focus.dart';
@@ -40,8 +44,10 @@ export 'src/widgets/inheriting_scaffold/delegating_scaffold.dart';
 export 'src/widgets/inheriting_scaffold/inheriting_scaffold.dart';
 export 'src/widgets/inheriting_scaffold/scaffold_behavior.dart';
 export 'src/widgets/misc/always_scrollbar.dart';
+export 'src/widgets/misc/animated_ghost.dart';
 export 'src/widgets/misc/debug_container.dart';
 export 'src/widgets/misc/dismissible_portal_target.dart';
+export 'src/widgets/misc/ghost.dart';
 export 'src/widgets/misc/maybe_align.dart';
 export 'src/widgets/misc/portal_dialog.dart';
 export 'src/widgets/misc/tab_visibility_change_recognizer.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/src/hooks/use_keys.dart';
 
-GlobalKey useGlobalKey() => useState(GlobalKey()).value;
+GlobalKey<T> useGlobalKey<T extends State>() => useState(GlobalKey<T>()).value;
 
 R useMemoized2<R, T extends ChangeNotifier>(
   R Function() valueBuilder, [

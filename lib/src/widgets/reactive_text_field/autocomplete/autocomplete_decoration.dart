@@ -45,7 +45,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
   final CompositeNode<K, T> options;
   final K? selectedKey;
   final void Function(CompositeValue<K, T>?) onSelected;
-  final String Function(T?) displayStringForOption;
+  final String Function(T) displayStringForOption;
   final double depthLeftInset;
   final double maxDropdownHeight;
   final AsYouTypeBehavior asYouTypeBehavior;
@@ -72,8 +72,9 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     final isMounted = useIsMounted();
 
     void onSelectedKeyChange() {
-      if (selectedValue != null) {
-        final displayValue = displayStringForOption(selectedValue?.value);
+      final innerSelectedValue = selectedValue?.value;
+      if (selectedValue != null && innerSelectedValue != null) {
+        final displayValue = displayStringForOption(innerSelectedValue);
         control.patchValue(selectedKey);
         if (effectiveController.isEntirelySelected) {
           effectiveController.value = effectiveController.value.copyWith(

@@ -196,7 +196,7 @@ extension CompositeNodeX<K, T> on CompositeNode<K, T> {
     );
   }
 
-  List<CompositeNode<K, T>>? pathToNode(K? key) {
+  List<CompositeNode<K, T>>? pathToNode(K key) {
     if (isEmpty) {
       return null;
     }
@@ -346,7 +346,7 @@ extension NullableCompositeNodeX<K, T> on CompositeNode<K, T>? {
   }
 
   CompositeNode<K, T> pruneByLabel(
-    String Function(T?) stringForOption,
+    String Function(T) stringForOption,
     String label, {
     PruneByLabelBehavior behavior = PruneByLabelBehavior.contains,
   }) {
@@ -435,7 +435,7 @@ extension NullableCompositeNodeX<K, T> on CompositeNode<K, T>? {
     );
   }
 
-  CompositeValue<K, T>? findByDisplayValue(String? displayValue, String Function(T? value) displayStringForOption) {
+  CompositeValue<K, T>? findByDisplayValue(String? displayValue, String Function(T value) displayStringForOption) {
     final node = this;
     if (node == null) {
       return null;
