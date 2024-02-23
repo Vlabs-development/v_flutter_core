@@ -51,6 +51,7 @@ export 'src/widgets/misc/ghost.dart';
 export 'src/widgets/misc/maybe_align.dart';
 export 'src/widgets/misc/portal_dialog.dart';
 export 'src/widgets/misc/tab_visibility_change_recognizer.dart';
+export 'src/widgets/misc/uninteractable.dart';
 export 'src/widgets/misc/wide.dart';
 export 'src/widgets/progress_button/button_variants.dart';
 export 'src/widgets/progress_button/progress_button.dart';

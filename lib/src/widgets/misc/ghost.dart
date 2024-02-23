@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
 class Ghost extends StatelessWidget {
   const Ghost({
@@ -14,12 +15,9 @@ class Ghost extends StatelessWidget {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: invisible ? 0 : 1,
-      child: IgnorePointer(
-        ignoring: invisible,
-        child: ExcludeFocus(
-          excluding: invisible,
-          child: child,
-        ),
+      child: Uninteractable(
+        uninteractable: invisible,
+        child: child,
       ),
     );
   }
