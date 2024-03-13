@@ -78,12 +78,10 @@ class PortalDialog extends HookWidget {
               child: Stack(
                 children: [
                   Focus(
-                    onKey: (node, event) {
-                      final hideKeyPressed = hideWhenPressed //
-                          .map((e) => e.accepts(event, RawKeyboard.instance))
-                          .any((it) => it);
-                      return hideKeyPressed ? KeyEventResult.ignored : KeyEventResult.handled;
-                    },
+                    onKeyEvent: (node, event) =>
+                        hideWhenPressed.map((e) => e.accepts(event, HardwareKeyboard.instance)).isNotEmpty
+                            ? KeyEventResult.ignored
+                            : KeyEventResult.handled,
                     autofocus: true,
                     child: const SizedBox(width: 1, height: 1),
                   ),
