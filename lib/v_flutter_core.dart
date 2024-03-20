@@ -19,6 +19,7 @@ export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_value_listener.dart';
 
+export 'src/theme/material/default_chip_theme_data.dart';
 export 'src/theme/mergeable_theme_extension/interweave_mergeable_theme_extension.dart';
 export 'src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 
