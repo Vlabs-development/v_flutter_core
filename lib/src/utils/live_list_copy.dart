@@ -64,9 +64,20 @@ class LiveList<ID, T> {
           final newlyListenableItemStreamMap = _getIdToStreamMap(
             restItems.where(listenPredicate).where((item) => !_disposableMap.containsKey(resolveId(item))),
           );
-          final itemsStreams = {...itemStreamMap, ...newlyListenableItemStreamMap};
+          final itemsStreams = {...itemStreamMap, ...newlyListenableItemStreamMap}.map(
+            (key, value) => MapEntry(key, value.asBroadcastStream()),
+          );
 
           _listenForItemChanges(itemsStreams);
+          _listenForItemChanges2(
+            itemsStreams.map(
+              (key, value) => MapEntry(
+                key,
+                value.shareValueSeeded([...newItems, ...restItems].singleWhere((item) => resolveId(item) == key)),
+                // value,
+              ),
+            ),
+          );
 
           removedItems.map((it) => resolveId(it)).forEach((key) => _disposableMap.removeByKey(key));
         },
@@ -104,9 +115,9 @@ class LiveList<ID, T> {
 
   void _listenForItemChanges(Map<ID, Stream<T>> itemStreamMap) {
     for (final keyedItemStream in itemStreamMap.entries) {
-      final itemStream = keyedItemStream.value.asBroadcastStream();
-
-      final subscription = itemStream.listen((updatedItem) {
+      final subscription = keyedItemStream.value.doOnData((event) {
+        debugPrint(')))))))))))))))))))))))) $event');
+      }).listen((updatedItem) {
         _mergeItem(updatedItem);
         if (!listenPredicate(updatedItem)) {
           _disposableMap.removeByKey(keyedItemStream.key);
@@ -114,38 +125,79 @@ class LiveList<ID, T> {
         }
       });
       _disposableMap.addStreamSubscription(keyedItemStream.key, subscription);
+    }
+  }
 
+  void _listenForItemChanges2(Map<ID, Stream<T>> itemStreamMap) {
+    for (final keyedItemStream in itemStreamMap.entries) {
       if (_disposableMapGroup.containsKeys(keyedItemStream.key, 'mainTrigger')) {
+        debugPrint('______ ❌❌❌❌ ${keyedItemStream.key}');
         return;
       }
 
-      final triggeringSubscription = itemStream
-          .asyncMap((item) => onItemUpdatedGetTriggeringStream(item)) //
-          .listen(
-        (streamMap) {
-          final subKeys = _disposableMapGroup.getSubKeys(keyedItemStream.key);
-          final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
-          for (final key in noLongerInterestedIn) {
-            _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
-          }
+      final az = keyedItemStream.value;
+      final triggeringSubscription = az.map((item) => onItemUpdatedGetTriggeringStream(item)).doOnData((event) {
+        debugPrint('______ >>>>>>>>>>>>>>>>>>>>>>>>> $event');
+      }).listen((streamMap) {
+        debugPrint('______________ EVENT OF MAPPED shift ${streamMap.keys}');
+        final subKeys = [..._disposableMapGroup.getSubKeys(keyedItemStream.key)]..remove('mainTrigger'); // BETTER
+        debugPrint('_________________ subkeys $subKeys');
+        final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
+        for (final key in noLongerInterestedIn) {
+          debugPrint('_________ REMOVING  ${keyedItemStream.key} $key');
+          _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
+        }
 
-          final nonYetListenedToStreams = Map.fromEntries(
-            streamMap.entries.where((entry) => !_disposableMapGroup.containsKeys(keyedItemStream.key, entry.key)),
-          );
-          final getItemStream = nonYetListenedToStreams.mapValue(
-            (value) => value
-                .asyncMap((event) => getItem(keyedItemStream.key))
-                .map((itemOption) => itemOption.toNullable())
-                .whereType<T>(),
-          );
-          getItemStream.forEach(
-            (key, value) {
-              final sub = value.listen((event) => addItem(event));
-              _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
-            },
-          );
-        },
-      );
+        final nonYetListenedToStreams = Map.fromEntries(
+          streamMap.entries.where((entry) => !_disposableMapGroup.containsKeys(keyedItemStream.key, entry.key)),
+        );
+        final getItemStream = nonYetListenedToStreams.mapValue(
+          (value) => value
+              .asyncMap((event) => getItem(keyedItemStream.key))
+              .map((itemOption) => itemOption.toNullable())
+              .whereType<T>(),
+        );
+        getItemStream.forEach(
+          (key, value) {
+            final sub = value.listen((event) {
+              debugPrint('______ ŘŘŘŘŘŘŘŘŘŘŘŘŘŘ adding $event');
+              addItem(event);
+            });
+            _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
+          },
+        );
+      });
+      // final triggeringSubscription = az
+      //     .asyncMap((item) {
+      //       debugPrint('_________________ ASYNC MAPPING $item');
+      //       return onItemUpdatedGetTriggeringStream(item);
+      //     }) //
+      //     .listen(
+      //   (streamMap) {
+      //     debugPrint('______________ EVENT OF MAPPED SHIFT ${streamMap.keys}');
+      //     final subKeys = _disposableMapGroup.getSubKeys(keyedItemStream.key);
+      //     final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
+      //     for (final key in noLongerInterestedIn) {
+      //       _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
+      //     }
+
+      //     final nonYetListenedToStreams = Map.fromEntries(
+      //       streamMap.entries.where((entry) => !_disposableMapGroup.containsKeys(keyedItemStream.key, entry.key)),
+      //     );
+      //     final getItemStream = nonYetListenedToStreams.mapValue(
+      //       (value) => value
+      //           .asyncMap((event) => getItem(keyedItemStream.key))
+      //           .map((itemOption) => itemOption.toNullable())
+      //           .whereType<T>(),
+      //     );
+      //     getItemStream.forEach(
+      //       (key, value) {
+      //         final sub = value.listen((event) => addItem(event));
+      //         _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
+      //       },
+      //     );
+      //   },
+      // );
       _disposableMapGroup.addStreamSubscription(keyedItemStream.key, 'mainTrigger', triggeringSubscription);
     }
   }

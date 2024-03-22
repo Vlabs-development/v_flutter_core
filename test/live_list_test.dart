@@ -3,7 +3,10 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
+import 'package:v_flutter_core/src/extensions/function_extensions.dart';
 import 'package:v_flutter_core/src/utils/live_list_copy.dart';
 
 // @Timeout(Duration(seconds: 5))
@@ -109,23 +112,28 @@ LiveList<String, _Model> aLiveList({
   Map<String, Stream<void>> _manualTrigger(_Model model) {
     return (triggeringStream ?? {}).map((key, value) {
       final it = value.singleWhere(
-        (element) => element.$1(model),
+        (element) {
+          debugPrint('___ trying to match $model - ${element.$1(model)}');
+          return element.$1(model);
+        },
         orElse: () {
-          assert(false, 'Multiple definitions match $model');
-          return ((model) => false, []);
+          debugPrint('_______ could not match $model');
+          assert(value.isNotEmpty, 'Multiple definitions match $model');
+          return ((model) => true, []);
         },
       ).$2;
 
       return MapEntry(
         key,
-        Stream<void>.fromFutures(it.map((e) => Future.delayed(e.after))),
+        Stream<void>.fromFutures(it.map((e) => Future.delayed(e.after))).doOnListen(() {
+          debugPrint('____ LISTENING TO $key');
+        }),
       );
     });
   }
-  // final manualStream = (triggeringStream ?? {}).map((e) => Future.delayed(e.after).then((value) => e.next));
-  // final effectiveTriggering = onItemUpdatedGetTriggeringStream ?? Stream.fromFutures(manualStream);
 
-  final effectiveOnItemUpdatedGetTriggeringStream = onItemUpdatedGetTriggeringStream ?? _manualTrigger;
+  final effectiveOnItemUpdatedGetTriggeringStream =
+      onItemUpdatedGetTriggeringStream ?? _manualTrigger.when(triggeringStream != null);
 
   return LiveList(
     itemListStream: effectiveItemStream,
@@ -626,21 +634,59 @@ void main() {
       );
     });
     test(
-      'adding an item results in listening for its updates',
+      'triggering stream should work if item matches predicate because of items',
+      () async {
+        final liveList = aLiveList(
+          items: [
+            ItemListEvent([aa]),
+          ],
+          triggeringStream: {
+            a.id: [
+              (
+                (_Model model) => model.name == 'AA',
+                [ItemTriggeringEvent(after: const Duration(milliseconds: 100))],
+              ),
+            ],
+          },
+          getItem: (id) => aaa,
+        );
+
+        expect(
+          liveList.stream,
+          emitsInOrder([
+            [aa],
+            [aaa],
+          ]),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+    test(
+      'triggering stream should work if item matches predicate after item update',
       () async {
         final liveList = aLiveList(
           items: [
             ItemListEvent([a]),
           ],
-          triggeringStream: {
-            a.id: [
-              (
-                (_Model model) => model.name == 'A',
-                [ItemTriggeringEvent(after: const Duration(milliseconds: 100))],
-              ),
-            ],
+          updates: [
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 100), next: aa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 200), next: aaa),
+          ],
+          // triggeringStream: {
+          //   a.id: [
+          //     (
+          //       (_Model model) => model.name == 'AAA',
+          //       [ItemTriggeringEvent(after: const Duration(milliseconds: 100))],
+          //     ),
+          //   ],
+          // },
+          onItemUpdatedGetTriggeringStream: (item) {
+            debugPrint('___######################## $item');
+            return {
+              item.name: Stream.fromFuture(Future.delayed(const Duration(seconds: 1))),
+            };
           },
-          getItem: (id) => aa,
+          getItem: (id) => a,
         );
 
         expect(
@@ -648,7 +694,8 @@ void main() {
           emitsInOrder([
             [a],
             [aa],
-            // [aa],
+            [aaa],
+            [a],
           ]),
         );
       },
