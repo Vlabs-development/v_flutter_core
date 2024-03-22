@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:v_flutter_core/src/utils/disposable_collection.dart';
@@ -74,7 +73,6 @@ class LiveList<ID, T> {
               (key, value) => MapEntry(
                 key,
                 value.shareValueSeeded([...newItems, ...restItems].singleWhere((item) => resolveId(item) == key)),
-                // value,
               ),
             ),
           );
@@ -115,9 +113,7 @@ class LiveList<ID, T> {
 
   void _listenForItemChanges(Map<ID, Stream<T>> itemStreamMap) {
     for (final keyedItemStream in itemStreamMap.entries) {
-      final subscription = keyedItemStream.value.doOnData((event) {
-        debugPrint(')))))))))))))))))))))))) $event');
-      }).listen((updatedItem) {
+      final subscription = keyedItemStream.value.listen((updatedItem) {
         _mergeItem(updatedItem);
         if (!listenPredicate(updatedItem)) {
           _disposableMap.removeByKey(keyedItemStream.key);
@@ -131,20 +127,14 @@ class LiveList<ID, T> {
   void _listenForItemChanges2(Map<ID, Stream<T>> itemStreamMap) {
     for (final keyedItemStream in itemStreamMap.entries) {
       if (_disposableMapGroup.containsKeys(keyedItemStream.key, 'mainTrigger')) {
-        debugPrint('______ ❌❌❌❌ ${keyedItemStream.key}');
         return;
       }
 
       final az = keyedItemStream.value;
-      final triggeringSubscription = az.map((item) => onItemUpdatedGetTriggeringStream(item)).doOnData((event) {
-        debugPrint('______ >>>>>>>>>>>>>>>>>>>>>>>>> $event');
-      }).listen((streamMap) {
-        debugPrint('______________ EVENT OF MAPPED shift ${streamMap.keys}');
+      final triggeringSubscription = az.map((item) => onItemUpdatedGetTriggeringStream(item)).listen((streamMap) {
         final subKeys = [..._disposableMapGroup.getSubKeys(keyedItemStream.key)]..remove('mainTrigger'); // BETTER
-        debugPrint('_________________ subkeys $subKeys');
         final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
         for (final key in noLongerInterestedIn) {
-          debugPrint('_________ REMOVING  ${keyedItemStream.key} $key');
           _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
         }
 
@@ -159,45 +149,11 @@ class LiveList<ID, T> {
         );
         getItemStream.forEach(
           (key, value) {
-            final sub = value.listen((event) {
-              debugPrint('______ ŘŘŘŘŘŘŘŘŘŘŘŘŘŘ adding $event');
-              addItem(event);
-            });
+            final sub = value.listen((event) => addItem(event));
             _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
           },
         );
       });
-      // final triggeringSubscription = az
-      //     .asyncMap((item) {
-      //       debugPrint('_________________ ASYNC MAPPING $item');
-      //       return onItemUpdatedGetTriggeringStream(item);
-      //     }) //
-      //     .listen(
-      //   (streamMap) {
-      //     debugPrint('______________ EVENT OF MAPPED SHIFT ${streamMap.keys}');
-      //     final subKeys = _disposableMapGroup.getSubKeys(keyedItemStream.key);
-      //     final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
-      //     for (final key in noLongerInterestedIn) {
-      //       _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
-      //     }
-
-      //     final nonYetListenedToStreams = Map.fromEntries(
-      //       streamMap.entries.where((entry) => !_disposableMapGroup.containsKeys(keyedItemStream.key, entry.key)),
-      //     );
-      //     final getItemStream = nonYetListenedToStreams.mapValue(
-      //       (value) => value
-      //           .asyncMap((event) => getItem(keyedItemStream.key))
-      //           .map((itemOption) => itemOption.toNullable())
-      //           .whereType<T>(),
-      //     );
-      //     getItemStream.forEach(
-      //       (key, value) {
-      //         final sub = value.listen((event) => addItem(event));
-      //         _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
-      //       },
-      //     );
-      //   },
-      // );
       _disposableMapGroup.addStreamSubscription(keyedItemStream.key, 'mainTrigger', triggeringSubscription);
     }
   }
@@ -211,14 +167,11 @@ class LiveList<ID, T> {
   void _removeItemById(ID id) => update((currentList) => [...currentList]..removeWhere((it) => resolveId(it) == id));
 
   void update(List<T> Function(List<T>) callback) {
-    final az = Option.fromNullable(_subject.valueOrNull).match(
-      () => callback([]),
-      (currentList) => callback(currentList),
-    );
-    debugPrint(az.toString());
-
     _subject.add(
-      az,
+      Option.fromNullable(_subject.valueOrNull).match(
+        () => callback([]),
+        (currentList) => callback(currentList),
+      ),
     );
   }
 }

@@ -11,9 +11,10 @@ import 'package:v_flutter_core/src/utils/live_list_copy.dart';
 
 // @Timeout(Duration(seconds: 5))
 
-const a = _Model(id: 'a', name: 'A');
-const aa = _Model(id: 'a', name: 'AA');
-const aaa = _Model(id: 'a', name: 'AAA');
+const a = _Model(id: 'a', name: 'A', foreginId: '1');
+const aa = _Model(id: 'a', name: 'AA', foreginId: '2');
+const aaa = _Model(id: 'a', name: 'AAA', foreginId: '2');
+const aaaa = _Model(id: 'a', name: 'AAAA', foreginId: '3');
 const b = _Model(id: 'b', name: 'B');
 const bb = _Model(id: 'b', name: 'BB');
 const bbb = _Model(id: 'b', name: 'BBB');
@@ -672,18 +673,9 @@ void main() {
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 100), next: aa),
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 200), next: aaa),
           ],
-          // triggeringStream: {
-          //   a.id: [
-          //     (
-          //       (_Model model) => model.name == 'AAA',
-          //       [ItemTriggeringEvent(after: const Duration(milliseconds: 100))],
-          //     ),
-          //   ],
-          // },
           onItemUpdatedGetTriggeringStream: (item) {
-            debugPrint('___######################## $item');
             return {
-              item.name: Stream.fromFuture(Future.delayed(const Duration(seconds: 1))),
+              item.foreginId: Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300))),
             };
           },
           getItem: (id) => a,
@@ -701,6 +693,106 @@ void main() {
       },
       timeout: const Timeout(Duration(seconds: 5)),
     );
+    test(
+      'triggering stream should 2',
+      () async {
+        final liveList = aLiveList(
+          items: [
+            ItemListEvent([aa]),
+          ],
+          updates: [
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
+          ],
+          // onItemUpdatedGetTriggeringStream: (item) {
+          //   return {
+          //     item.foreginId: Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300))),
+          //   };
+          // },
+          triggeringStream: {
+            'a': [
+              (
+                (_Model model) => model.foreginId == '2',
+                [
+                  ItemTriggeringEvent(after: const Duration(milliseconds: 300)),
+                  ItemTriggeringEvent(after: const Duration(milliseconds: 600)),
+                ],
+              ),
+            ],
+          },
+          getItem: (id) => a,
+        );
+
+        expect(
+          liveList.stream,
+          emitsInOrder([
+            [aa],
+            [aaa],
+            [aa],
+            [aaa],
+            [aa],
+            [aaa],
+            [a],
+            [a],
+          ]),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+    test(
+      'triggering stream should 3',
+      () async {
+        final liveList = aLiveList(
+          items: [
+            ItemListEvent([aa]),
+          ],
+          updates: [
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: a),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 500), next: aaaa),
+          ],
+          // triggeringStream: {
+          //   'a': [
+          //     (
+          //       (_Model model) => true,
+          //       [],
+          //     )
+          //   ],
+          // },
+          onItemUpdatedGetTriggeringStream: (item) {
+            return {
+              item.foreginId: item.foreginId == '2'
+                  ? Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300)))
+                  : const Stream.empty(),
+            };
+          },
+          getItem: (id) {
+            debugPrint('______ GET ITEM CALL');
+            return a;
+          },
+        );
+
+        expect(
+          liveList.stream,
+          emitsInOrder([
+            [aa],
+            [aaa],
+            [aa],
+            [aaa],
+            [aa],
+            [a],
+            [aaaa],
+          ]),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
   });
 }
 
@@ -708,25 +800,27 @@ class _Model {
   const _Model({
     required this.id,
     required this.name,
+    this.foreginId = '',
   });
 
   final String id;
   final String name;
+  final String foreginId;
 
   @override
   String toString() {
-    return '_Model(id: $id, name: $name)';
+    return '_Model(id: $id, name: $name, foreginId: $foreginId)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is _Model && other.id == id && other.name == name;
+    return other is _Model && other.id == id && other.name == name && other.foreginId == foreginId;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^ name.hashCode;
+    return id.hashCode ^ name.hashCode ^ foreginId.hashCode;
   }
 }
