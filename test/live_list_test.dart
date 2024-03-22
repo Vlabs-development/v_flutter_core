@@ -563,6 +563,23 @@ void main() {
       );
     });
   });
+
+  // group('onItemUpdatedGetTriggeringStream', () {
+  //   expect(
+  //     aLiveList(
+  //       items: [
+  //         ItemListEvent([a, b]),
+  //       ],
+  //       triggeringStream: {
+  //         (model) => 
+  //       },
+  //       includePredicate: (item) => item.id != 'a',
+  //     ).stream,
+  //     emitsInOrder([
+  //       [b],
+  //     ]),
+  //   );
+  // });
 }
 
 class _Model {
