@@ -73,6 +73,13 @@ class DisposableMapGroup<IDType, IDSubType> {
     cleanupCallbacks[key]![subKey] = cleanup;
   }
 
+  void removeByKey(IDType key) {
+    if (cleanupCallbacks.containsKey(key)) {
+      final subMap = cleanupCallbacks.remove(key);
+      subMap?.forEach((_, cleanup) => cleanup());
+    }
+  }
+
   void removeByKeys(IDType key, IDSubType subKey) {
     if (cleanupCallbacks.containsKey(key)) {
       final subMap = cleanupCallbacks[key];
@@ -85,6 +92,14 @@ class DisposableMapGroup<IDType, IDSubType> {
 
   bool containsKeys(IDType key, IDSubType subKey) {
     return cleanupCallbacks.containsKey(key) && cleanupCallbacks[key]!.containsKey(subKey);
+  }
+
+  Iterable<IDSubType> getSubKeys(IDType key) {
+    if (cleanupCallbacks.containsKey(key)) {
+      return cleanupCallbacks[key]!.keys;
+    }
+
+    return [];
   }
 
   void dispose() {

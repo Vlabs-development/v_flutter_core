@@ -6,6 +6,8 @@ import 'package:collection/collection.dart';
 import 'package:test/test.dart';
 import 'package:v_flutter_core/src/utils/live_list_copy.dart';
 
+// @Timeout(Duration(seconds: 5))
+
 const a = _Model(id: 'a', name: 'A');
 const aa = _Model(id: 'a', name: 'AA');
 const aaa = _Model(id: 'a', name: 'AAA');
@@ -30,6 +32,14 @@ class ItemUpdateEvent {
   final String id;
   final Duration after;
   final _Model next;
+}
+
+class ItemTriggeringEvent {
+  ItemTriggeringEvent({
+    this.after = Duration.zero,
+  });
+
+  final Duration after;
 }
 
 class ItemCreateEvent {
@@ -62,6 +72,12 @@ LiveList<String, _Model> aLiveList({
   List<ItemListEvent>? items,
   List<ItemUpdateEvent>? updates,
   List<ItemCreateEvent>? creates,
+  // Map<String, Map<String, Stream<_Model>> Function(_Model model)> triggeringStream = const {},
+  // Map<String, Map<String, List<ItemTriggeringEvent>> Function(_Model _model)> triggeringStream = const {},
+  // Map<String, List<Set<List<ItemTriggeringEvent>> Function(Function(_Model model) p1)>>? triggeringStream2,
+  Map<String, Stream<void>> Function(_Model item)? onItemUpdatedGetTriggeringStream,
+  FutureOr<_Model> Function(String id)? getItem,
+  Map<String, List<(bool Function(_Model model), List<ItemTriggeringEvent>)>>? triggeringStream,
 }) {
   assert(
     onItemUpdated == null || updates == null,
@@ -75,6 +91,10 @@ LiveList<String, _Model> aLiveList({
     itemStream == null || items == null,
     'Both itemStream and items can not be defined at the same time',
   );
+  assert(
+    onItemUpdatedGetTriggeringStream == null || triggeringStream == null,
+    'Both onItemUpdatedGetTriggeringStream and triggeringStream can not be defined at the same time',
+  );
   final manualItemsStream = (items ?? []).map((e) => Future.delayed(e.after).then((value) => e.items));
   final effectiveItemStream = itemStream ?? Stream.fromFutures(manualItemsStream);
 
@@ -86,6 +106,27 @@ LiveList<String, _Model> aLiveList({
   final manualItemCreatedStream = (creates ?? []).map((e) => Future.delayed(e.after).then((value) => e.next));
   final effectiveOnItemCreated = itemCreatedStream ?? Stream.fromFutures(manualItemCreatedStream);
 
+  Map<String, Stream<void>> _manualTrigger(_Model model) {
+    return (triggeringStream ?? {}).map((key, value) {
+      final it = value.singleWhere(
+        (element) => element.$1(model),
+        orElse: () {
+          assert(false, 'Multiple definitions match $model');
+          return ((model) => false, []);
+        },
+      ).$2;
+
+      return MapEntry(
+        key,
+        Stream<void>.fromFutures(it.map((e) => Future.delayed(e.after))),
+      );
+    });
+  }
+  // final manualStream = (triggeringStream ?? {}).map((e) => Future.delayed(e.after).then((value) => e.next));
+  // final effectiveTriggering = onItemUpdatedGetTriggeringStream ?? Stream.fromFutures(manualStream);
+
+  final effectiveOnItemUpdatedGetTriggeringStream = onItemUpdatedGetTriggeringStream ?? _manualTrigger;
+
   return LiveList(
     itemListStream: effectiveItemStream,
     getItemUpdatedStream: effectiveOnItemUpdated,
@@ -93,6 +134,8 @@ LiveList<String, _Model> aLiveList({
     resolveId: resolveId,
     listenPredicate: listenPredicate,
     includePredicate: includePredicate,
+    getItem: getItem,
+    onItemUpdatedGetTriggeringStream: effectiveOnItemUpdatedGetTriggeringStream,
   );
 }
 
@@ -564,22 +607,54 @@ void main() {
     });
   });
 
-  // group('onItemUpdatedGetTriggeringStream', () {
-  //   expect(
-  //     aLiveList(
-  //       items: [
-  //         ItemListEvent([a, b]),
-  //       ],
-  //       triggeringStream: {
-  //         (model) => 
-  //       },
-  //       includePredicate: (item) => item.id != 'a',
-  //     ).stream,
-  //     emitsInOrder([
-  //       [b],
-  //     ]),
-  //   );
-  // });
+  group('onItemUpdatedGetTriggeringStream', () {
+    test('should throw when getItem is not specified', () {
+      expect(
+        () => aLiveList(
+          onItemUpdatedGetTriggeringStream: (item) => {},
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+    test('should not throw when getItem is also specified', () {
+      expect(
+        () => aLiveList(
+          onItemUpdatedGetTriggeringStream: (item) => {},
+          getItem: (id) => Future.value(a),
+        ),
+        returnsNormally,
+      );
+    });
+    test(
+      'adding an item results in listening for its updates',
+      () async {
+        final liveList = aLiveList(
+          items: [
+            ItemListEvent([a]),
+          ],
+          triggeringStream: {
+            a.id: [
+              (
+                (_Model model) => model.name == 'A',
+                [ItemTriggeringEvent(after: const Duration(milliseconds: 100))],
+              ),
+            ],
+          },
+          getItem: (id) => aa,
+        );
+
+        expect(
+          liveList.stream,
+          emitsInOrder([
+            [a],
+            [aa],
+            // [aa],
+          ]),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+  });
 }
 
 class _Model {
