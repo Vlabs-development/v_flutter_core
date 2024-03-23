@@ -1,134 +1,190 @@
-// import 'dart:async';
+// ignore_for_file: sort_constructors_first
 
-// import 'package:flutter/foundation.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:riverpod_annotation/riverpod_annotation.dart';
-// import 'package:rxdart/rxdart.dart';
-// import 'package:v_flutter_core/v_flutter_core.dart';
+import 'dart:async';
 
-// mixin DisposableMapMixin<IDType> {
-//   Map<IDType, VoidCallback> cleanupCallbacks = {};
+import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:v_flutter_core/src/utils/disposable_collection.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
-//   void addDisposing(IDType key, VoidCallback cleanup) {
-//     if (cleanupCallbacks.containsKey(key)) {
-//       throw 'Key already exists';
-//     }
+bool _alwaysTrue(dynamic value) => true;
+Map<String, Stream<void>> _empty(dynamic value) => {};
 
-//     cleanupCallbacks.putIfAbsent(key, () => cleanup);
-//   }
+Future<Option<T>> Function(ID) wrapMaybeFuture<T, ID>(FutureOr<T> Function(ID)? maybeFuture) {
+  return (ID id) async => Option.fromNullable(await maybeFuture?.call(id));
+}
 
-//   void addStreamSubscription(IDType key, StreamSubscription sub) => addDisposing(key, sub.cancel);
+class LiveList<ID, T> {
+  final bool Function(T item) includePredicate;
+  final bool Function(T item) listenPredicate;
+  final ID Function(T item) resolveId;
+  final Stream<List<T>> itemListStream;
+  final Stream<T> Function(ID id) getItemUpdatedStream;
+  final Stream<T> itemCreatedStream;
 
-//   void dispose() {
-//     for (final fn in cleanupCallbacks.values) {
-//       fn.call();
-//     }
-//   }
-// }
+  final Map<String, Stream<void>> Function(T item) getDependencyStreams;
+  final Future<Option<T>> Function(ID) getItem; // TOTO assert
 
-// class DisposableMap<IDType> with DisposableMapMixin<IDType> {
-//   DisposableMap();
-// }
+  final _subject = BehaviorSubject<List<T>>();
+  Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
 
-// extension _X<T, ID> on Ref<AsyncValue<List<T>>> {
-//   FutureOr _onNewItems({
-//     required void Function(List<T> newItems) handle,
-//     required ID Function(T item) resolveId,
-//   }) {
-//     listenSelf((previous, next) {
-//       final previousIds = (previous?.actualValueOrNull ?? []).map(resolveId);
-//       final nextItems = next.actualValueOrNull ?? [];
-//       final newIds = nextItems.map(resolveId).where((id) => !previousIds.contains(id)).toList();
+  void dispose() {
+    _disposableMap.dispose();
+    _disposableList.dispose();
+    _disposableMapGroup.dispose();
+  }
 
-//       final newItems = nextItems.where((item) => newIds.contains(resolveId(item)));
-//       handle(newItems.toList());
-//     });
-//   }
-// }
+  final _disposableMap = DisposableMap<ID>();
+  final _disposableList = DisposableList();
+  final _disposableMapGroup = DisposableMapGroup<ID, String>();
 
-// // ignore: invalid_use_of_internal_member
-// mixin HoodooLiveList<T, ID> on BuildlessAutoDisposeStreamNotifier<List<T>> {
-//   bool predicate(T item);
-//   bool listenPredicate(T item);
-//   ID resolveId(T item);
+  LiveList({
+    required this.itemListStream,
+    required this.getItemUpdatedStream,
+    required this.itemCreatedStream,
+    required this.resolveId,
+    this.includePredicate = _alwaysTrue,
+    this.listenPredicate = _alwaysTrue,
+    Map<String, Stream<void>> Function(T item)? getDependencyStreams,
+    FutureOr<T> Function(ID)? getItem,
+  })  : getDependencyStreams = getDependencyStreams ?? _empty,
+        getItem = wrapMaybeFuture(getItem) {
+    if (getDependencyStreams != null && getItem == null) {
+      throw ArgumentError('Must define getItem for getDependencyStreams to work.');
+    }
+    _disposableList.addStreamSubscription(itemListStream.listen((items) => _replaceItems(items)));
+    _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => _mergeItem(item)));
+    _disposableList.addStreamSubscription(
+      _onItemsUpdate(
+        resolveId: resolveId,
+        handle: (newItems, restItems, removedItems) {
+          final itemStreamMap = _getIdToStreamMap(newItems.where(listenPredicate));
+          final newlyListenableItemStreamMap = _getIdToStreamMap(
+            restItems.where(listenPredicate).where((item) => !_disposableMap.containsKey(resolveId(item))),
+          );
+          final itemsStreams = {...itemStreamMap, ...newlyListenableItemStreamMap}.map(
+            (key, value) => MapEntry(key, value.asBroadcastStream()),
+          );
 
-//   @nonVirtual
-//   Stream<List<T>> internalBuild({
-//     required Stream<List<T>> Function() getItemList,
-//     required Stream<T> Function(ID item) onItemUpdated,
-//     required Stream<T> Function() onItemCreated,
-//   }) async* {
-//     final disposableMap = DisposableMap<String>();
-//     ref.onDispose(() => disposableMap.dispose());
+          _listenForItemChanges(itemsStreams);
+          _listenForDependencyChanges(
+            itemsStreams.map(
+              (key, value) => MapEntry(
+                key,
+                value.shareValueSeeded([...newItems, ...restItems].singleWhere((item) => resolveId(item) == key)),
+              ),
+            ),
+          );
 
-//     disposableMap.addStreamSubscription(
-//       'itemList',
-//       getItemList().listen((items) {
-//         state.maybeMap(
-//           data: (_) => _maybeAddOrReplaceItems(items),
-//           orElse: () => state = AsyncData(items),
-//         );
-//       }),
-//     );
-//     disposableMap.addStreamSubscription(
-//       'itemCreated',
-//       onItemCreated()
-//           .doOnData((event) => debugPrint('__ Item with id ${resolveId(event)} got created'))
-//           .listen((item) => _maybeAddOrReplaceItem(item)),
-//     );
+          removedItems.map((it) => resolveId(it)).forEach((key) => _disposableMap.removeByKey(key));
+        },
+      ),
+    );
+  }
 
-//     ref._onNewItems(
-//       resolveId: resolveId,
-//       handle: (newItems) {
-//         final itemStreamMap = Map.fromEntries(
-//           newItems.where(listenPredicate).map(
-//                 (item) => MapEntry(
-//                   'itemUpdated-${resolveId(item)}',
-//                   onItemUpdated(resolveId(item))
-//                       .doOnListen(() => debugPrint('__ Listening for changes of ${resolveId(item)}'))
-//                       .doOnCancel(() => debugPrint('__ Not listening anymore for changes of ${resolveId(item)}')),
-//                 ),
-//               ),
-//         );
+  void addItem(T externalItem) => _mergeItem(externalItem);
+  void removeItem(ID id) => _removeItemById(id);
 
-//         _listenForItemChanges(
-//           itemStreamMap,
-//           disposableMap,
-//         );
-//       },
-//     );
-//   }
+  Map<ID, Stream<T>> _getIdToStreamMap(Iterable<T> items) {
+    return Map.fromEntries(items.map((item) => MapEntry(resolveId(item), getItemUpdatedStream(resolveId(item)))));
+  }
 
-//   void addItem(T externalItem) {
-//     _maybeAddOrReplaceItem(externalItem);
-//   }
+  StreamSubscription _onItemsUpdate({
+    required ID Function(T item) resolveId,
+    required void Function(Iterable<T> newItems, Iterable<T> restItems, Iterable<T> removedItems) handle,
+  }) {
+    return _subject._listenSelf((previous, next) {
+      final _previous = previous ?? [];
+      final previousIds = _previous.map(resolveId);
+      final nextIds = next.map(resolveId);
 
-//   void _listenForItemChanges(Map<String, Stream<T>> itemStreamMap, DisposableMap<String> disposableMap) {
-//     for (final keyedItemStream in itemStreamMap.entries) {
-//       StreamSubscription? subscription;
-//       subscription = keyedItemStream.value.listen((updatedItem) {
-//         if (predicate(updatedItem)) {
-//           _maybeAddOrReplaceItem(updatedItem);
-//         } else {
-//           subscription?.cancel();
-//           _removeItemById(resolveId(updatedItem));
-//         }
-//       });
-//       disposableMap.addStreamSubscription(keyedItemStream.key, subscription);
-//     }
-//   }
+      final newIds = nextIds.where((id) => !previousIds.contains(id));
+      final removedIds = previousIds.where((id) => !nextIds.contains(id));
 
-//   void _maybeAddOrReplaceItem(T item) {
-//     _maybeAddOrReplaceItems([item]);
-//   }
+      final newItems = next.where((item) => newIds.contains(resolveId(item)));
+      final removedItems = _previous.where((item) => removedIds.contains(resolveId(item)));
+      final restItems =
+          next.where((item) => !newIds.contains(resolveId(item)) && !removedIds.contains(resolveId(item)));
 
-//   void _maybeAddOrReplaceItems(List<T> items) {
-//     update((originalApiList) => originalApiList.merge(items, equateBy: resolveId).where(predicate).toList());
-//   }
+      handle(newItems, restItems, removedItems);
+    });
+  }
 
-//   void _removeItemById(ID id) {
-//     update(
-//       (originalApiList) => [...originalApiList..removeWhere((item) => resolveId(item) == id)],
-//     );
-//   }
-// }
+  void _listenForItemChanges(Map<ID, Stream<T>> itemStreamMap) {
+    for (final keyedItemStream in itemStreamMap.entries) {
+      final subscription = keyedItemStream.value.listen((updatedItem) {
+        _mergeItem(updatedItem);
+        if (!listenPredicate(updatedItem)) {
+          _disposableMap.removeByKey(keyedItemStream.key);
+          _disposableMapGroup.removeByKey(keyedItemStream.key);
+        }
+      });
+      _disposableMap.addStreamSubscription(keyedItemStream.key, subscription);
+    }
+  }
+
+  void _listenForDependencyChanges(Map<ID, Stream<T>> itemStreamMap) {
+    for (final keyedItemStream in itemStreamMap.entries) {
+      if (_disposableMapGroup.containsKeys(keyedItemStream.key, 'mainTrigger')) {
+        return;
+      }
+
+      final triggeringSubscription = keyedItemStream.value
+          .map((item) => getDependencyStreams(item)) //
+          .listen((streamMap) {
+        debugPrint('>>>> $streamMap');
+        
+        final subKeys = [..._disposableMapGroup.getSubKeys(keyedItemStream.key)]..remove('mainTrigger'); // BETTER
+        final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
+        for (final key in noLongerInterestedIn) {
+          _disposableMapGroup.removeByKeys(keyedItemStream.key, key);
+        }
+
+        final nonYetListenedToStreams = Map.fromEntries(
+          streamMap.entries.where((entry) => !_disposableMapGroup.containsKeys(keyedItemStream.key, entry.key)),
+        );
+        final getItemStream = nonYetListenedToStreams.mapValue(
+          (value) => value
+              .asyncMap((event) => getItem(keyedItemStream.key))
+              .map((itemOption) => itemOption.toNullable())
+              .whereType<T>(),
+        );
+        getItemStream.forEach(
+          (key, value) {
+            final sub = value.listen((event) => addItem(event));
+            _disposableMapGroup.addStreamSubscription(keyedItemStream.key, key, sub);
+          },
+        );
+      });
+      _disposableMapGroup.addStreamSubscription(keyedItemStream.key, 'mainTrigger', triggeringSubscription);
+    }
+  }
+
+  void _mergeItem(T item) => _mergeItems([item]);
+
+  void _mergeItems(List<T> items) => update((currentList) => currentList.merge(items, equateBy: resolveId));
+
+  void _replaceItems(List<T> items) => update((currentList) => items);
+
+  void _removeItemById(ID id) => update((currentList) => [...currentList]..removeWhere((it) => resolveId(it) == id));
+
+  void update(List<T> Function(List<T>) callback) {
+    _subject.add(
+      Option.fromNullable(_subject.valueOrNull).match(
+        () => callback([]),
+        (currentList) => callback(currentList),
+      ),
+    );
+  }
+}
+
+extension _BehaviorSubjectExtension<T> on BehaviorSubject<T> {
+  StreamSubscription<T> _listenSelf(void Function(T? previous, T current) callback) {
+    T? _previous;
+    return listen((next) {
+      callback(_previous, next);
+      _previous = next;
+    });
+  }
+}

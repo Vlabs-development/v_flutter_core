@@ -4,12 +4,9 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
 import 'package:v_flutter_core/src/extensions/function_extensions.dart';
-import 'package:v_flutter_core/src/utils/live_list_copy.dart';
-
-// @Timeout(Duration(seconds: 5))
+import 'package:v_flutter_core/src/utils/live_list.dart';
 
 const a = _Model(id: 'a', name: 'A', foreginId: '1');
 const aa = _Model(id: 'a', name: 'AA', foreginId: '2');
@@ -76,12 +73,9 @@ LiveList<String, _Model> aLiveList({
   List<ItemListEvent>? items,
   List<ItemUpdateEvent>? updates,
   List<ItemCreateEvent>? creates,
-  // Map<String, Map<String, Stream<_Model>> Function(_Model model)> triggeringStream = const {},
-  // Map<String, Map<String, List<ItemTriggeringEvent>> Function(_Model _model)> triggeringStream = const {},
-  // Map<String, List<Set<List<ItemTriggeringEvent>> Function(Function(_Model model) p1)>>? triggeringStream2,
-  Map<String, Stream<void>> Function(_Model item)? onItemUpdatedGetTriggeringStream,
+  Map<String, Stream<void>> Function(_Model item)? getDependencyStreams,
   FutureOr<_Model> Function(String id)? getItem,
-  Map<String, List<(bool Function(_Model model), List<ItemTriggeringEvent>)>>? triggeringStream,
+  Map<String, List<(bool Function(_Model model), List<ItemTriggeringEvent>)>>? dependencyStreams,
 }) {
   assert(
     onItemUpdated == null || updates == null,
@@ -96,8 +90,8 @@ LiveList<String, _Model> aLiveList({
     'Both itemStream and items can not be defined at the same time',
   );
   assert(
-    onItemUpdatedGetTriggeringStream == null || triggeringStream == null,
-    'Both onItemUpdatedGetTriggeringStream and triggeringStream can not be defined at the same time',
+    getDependencyStreams == null || dependencyStreams == null,
+    'Both getDependencyStreams and triggeringStream can not be defined at the same time',
   );
   final manualItemsStream = (items ?? []).map((e) => Future.delayed(e.after).then((value) => e.items));
   final effectiveItemStream = itemStream ?? Stream.fromFutures(manualItemsStream);
@@ -110,31 +104,36 @@ LiveList<String, _Model> aLiveList({
   final manualItemCreatedStream = (creates ?? []).map((e) => Future.delayed(e.after).then((value) => e.next));
   final effectiveOnItemCreated = itemCreatedStream ?? Stream.fromFutures(manualItemCreatedStream);
 
-  Map<String, Stream<void>> _manualTrigger(_Model model) {
-    return (triggeringStream ?? {}).map((key, value) {
-      final it = value.singleWhere(
-        (element) {
-          debugPrint('___ trying to match $model - ${element.$1(model)}');
-          return element.$1(model);
-        },
-        orElse: () {
-          debugPrint('_______ could not match $model');
-          assert(value.isNotEmpty, 'Multiple definitions match $model');
-          return ((model) => true, []);
-        },
-      ).$2;
+  Map<String, Stream<void>> _manualDependencyStreams(_Model model) {
+    return (dependencyStreams ?? {}).map((key, value) {
+      // final it = value.singleWhere(
+      //   (element) {
+      //     final match = element.$1(model);
+      //     debugPrint('Match ${match ? "✅" : "❌"} of $model');
+      //     return match;
+      //   },
+      //   orElse: () {
+      //     debugPrint('❌❌ ${value.length}');
+      //     assert(value.isNotEmpty, 'Multiple definitions match $model');
+      //     return ((model) => false, []);
+      //   },
+      // ).$2;
 
-      return MapEntry(
-        key,
-        Stream<void>.fromFutures(it.map((e) => Future.delayed(e.after))).doOnListen(() {
-          debugPrint('____ LISTENING TO $key');
-        }),
-      );
+      // final stream =
+      //     it.isEmpty ? const Stream.empty() : Stream<void>.fromFutures(it.map((e) => Future.delayed(e.after)));
+
+      final events = value.where((it) => it.$1(model)).firstOrNull?.$2 ?? [];
+      final stream = events.isEmpty
+          ? const Stream.empty()
+          : Stream<void>.fromFutures(events.map((event) => Future.delayed(event.after)));
+          debugPrint('________ $key returning $stream');
+
+      return MapEntry(key, stream);
     });
   }
 
-  final effectiveOnItemUpdatedGetTriggeringStream =
-      onItemUpdatedGetTriggeringStream ?? _manualTrigger.when(triggeringStream != null);
+  final effectiveGetDependencyStreams =
+      getDependencyStreams ?? _manualDependencyStreams.when(dependencyStreams != null);
 
   return LiveList(
     itemListStream: effectiveItemStream,
@@ -144,7 +143,7 @@ LiveList<String, _Model> aLiveList({
     listenPredicate: listenPredicate,
     includePredicate: includePredicate,
     getItem: getItem,
-    onItemUpdatedGetTriggeringStream: effectiveOnItemUpdatedGetTriggeringStream,
+    getDependencyStreams: effectiveGetDependencyStreams,
   );
 }
 
@@ -616,11 +615,11 @@ void main() {
     });
   });
 
-  group('onItemUpdatedGetTriggeringStream', () {
+  group('getDependencyStreams', () {
     test('should throw when getItem is not specified', () {
       expect(
         () => aLiveList(
-          onItemUpdatedGetTriggeringStream: (item) => {},
+          getDependencyStreams: (item) => {},
         ),
         throwsA(isA<ArgumentError>()),
       );
@@ -628,7 +627,7 @@ void main() {
     test('should not throw when getItem is also specified', () {
       expect(
         () => aLiveList(
-          onItemUpdatedGetTriggeringStream: (item) => {},
+          getDependencyStreams: (item) => {},
           getItem: (id) => Future.value(a),
         ),
         returnsNormally,
@@ -641,7 +640,7 @@ void main() {
           items: [
             ItemListEvent([aa]),
           ],
-          triggeringStream: {
+          dependencyStreams: {
             a.id: [
               (
                 (_Model model) => model.name == 'AA',
@@ -672,10 +671,23 @@ void main() {
           updates: [
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 100), next: aa),
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 200), next: aaa),
+            ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 300), next: aaaa),
           ],
-          onItemUpdatedGetTriggeringStream: (item) {
+          // dependencyStreams: {
+          //   '3': [
+          //     (
+          //       (_Model model) => model.foreginId == '3',
+          //       [
+          //         ItemTriggeringEvent(after: const Duration(milliseconds: 400)),
+          //       ],
+          //     ),
+          //   ],
+          // },
+          getDependencyStreams: (item) {
             return {
-              item.foreginId: Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300))),
+              item.foreginId: item.foreginId == '3'
+                  ? Stream.fromFuture(Future.delayed(const Duration(milliseconds: 400)))
+                  : const Stream.empty(),
             };
           },
           getItem: (id) => a,
@@ -687,6 +699,7 @@ void main() {
             [a],
             [aa],
             [aaa],
+            [aaaa],
             [a],
           ]),
         );
@@ -707,12 +720,7 @@ void main() {
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aa),
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: aaa),
           ],
-          // onItemUpdatedGetTriggeringStream: (item) {
-          //   return {
-          //     item.foreginId: Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300))),
-          //   };
-          // },
-          triggeringStream: {
+          dependencyStreams: {
             'a': [
               (
                 (_Model model) => model.foreginId == '2',
@@ -757,15 +765,7 @@ void main() {
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 10), next: a),
             ItemUpdateEvent(id: a.id, after: const Duration(milliseconds: 500), next: aaaa),
           ],
-          // triggeringStream: {
-          //   'a': [
-          //     (
-          //       (_Model model) => true,
-          //       [],
-          //     )
-          //   ],
-          // },
-          onItemUpdatedGetTriggeringStream: (item) {
+          getDependencyStreams: (item) {
             return {
               item.foreginId: item.foreginId == '2'
                   ? Stream.fromFuture(Future.delayed(const Duration(milliseconds: 300)))
