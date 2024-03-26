@@ -9,7 +9,7 @@ import 'package:v_flutter_core/src/utils/disposable_collection.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 bool _alwaysTrue(dynamic value) => true;
-Map<String, Stream<void>> _empty(dynamic value) => {};
+Map<String? Function(dynamic), Stream<void> Function(String)> _empty(dynamic value) => {};
 
 Future<Option<T>> Function(ID) wrapMaybeFuture<T, ID>(FutureOr<T> Function(ID)? maybeFuture) {
   return (ID id) async => Option.fromNullable(await maybeFuture?.call(id));
@@ -23,7 +23,7 @@ class LiveList<ID, T> {
   final Stream<T> Function(ID id) getItemUpdatedStream;
   final Stream<T> itemCreatedStream;
 
-  final Map<String, Stream<void>> Function(T item) getDependencyStreams;
+  final Map<String? Function(T), Stream<void> Function(String)> Function(T item) getDependencyStreams;
   final Future<Option<T>> Function(ID) getItem; // TOTO assert
 
   final _subject = BehaviorSubject<List<T>>();
@@ -46,7 +46,7 @@ class LiveList<ID, T> {
     required this.resolveId,
     this.includePredicate = _alwaysTrue,
     this.listenPredicate = _alwaysTrue,
-    Map<String, Stream<void>> Function(T item)? getDependencyStreams,
+    Map<String? Function(T), Stream<void> Function(String)> Function(T item)? getDependencyStreams,
     FutureOr<T> Function(ID)? getItem,
   })  : getDependencyStreams = getDependencyStreams ?? _empty,
         getItem = wrapMaybeFuture(getItem) {
@@ -64,7 +64,9 @@ class LiveList<ID, T> {
             restItems.where(listenPredicate).where((item) => !_disposableMap.containsKey(resolveId(item))),
           );
           final itemsStreams = {...itemStreamMap, ...newlyListenableItemStreamMap}.map(
-            (key, value) => MapEntry(key, value.asBroadcastStream()),
+            (key, value) {
+              return MapEntry(key, value.asBroadcastStream());
+            },
           );
 
           _listenForItemChanges(itemsStreams);
@@ -77,7 +79,10 @@ class LiveList<ID, T> {
             ),
           );
 
-          removedItems.map((it) => resolveId(it)).forEach((key) => _disposableMap.removeByKey(key));
+          removedItems.map((it) => resolveId(it)).forEach((key) {
+            _disposableMap.removeByKey(key);
+            _disposableMapGroup.removeByKey(key);
+          });
         },
       ),
     );
@@ -130,11 +135,19 @@ class LiveList<ID, T> {
         return;
       }
 
-      final triggeringSubscription = keyedItemStream.value
-          .map((item) => getDependencyStreams(item)) //
-          .listen((streamMap) {
-        debugPrint('>>>> $streamMap');
-        
+      final map = keyedItemStream.value
+          .map((item) => (item, getDependencyStreams(item))) //
+          .map(
+            (event) => event.$2.map<String?, Stream<void>?>((key, value) {
+              final nullableKey = key(event.$1);
+              final stream = nullableKey == null ? const Stream.empty() : value(nullableKey);
+              return MapEntry(key(event.$1), stream);
+            }).entries,
+          )
+          .map((event) => Map.fromEntries(event)..removeWhere((key, value) => key == null || value == null))
+          .map((event) => event.cast<String, Stream<void>>());
+
+      final triggeringSubscription = map.listen((streamMap) {
         final subKeys = [..._disposableMapGroup.getSubKeys(keyedItemStream.key)]..remove('mainTrigger'); // BETTER
         final noLongerInterestedIn = subKeys.where((key) => !streamMap.containsKey(key)).toList();
         for (final key in noLongerInterestedIn) {

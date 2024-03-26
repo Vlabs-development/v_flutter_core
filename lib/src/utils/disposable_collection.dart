@@ -25,7 +25,15 @@ class DisposableMap<IDType> {
   Map<IDType, VoidCallback> cleanupCallbacks = {};
   VoidCallback? onDispose;
 
-  void addStreamSubscription(IDType key, StreamSubscription sub) => addDisposing(key, sub.cancel);
+  void addStreamSubscription(IDType key, StreamSubscription sub) {
+    debugPrint('________ subbing for $key');
+
+    addDisposing(key, () {
+      debugPrint('________ disposing sub of $key');
+      sub.cancel();
+    });
+  }
+
   void addDisposing(IDType key, VoidCallback cleanup) {
     if (cleanupCallbacks.containsKey(key)) {
       throw 'Disposable for key $key already exists!';
