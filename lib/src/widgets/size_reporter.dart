@@ -4,9 +4,8 @@ import 'package:v_flutter_core/src/extensions/global_key_extensions.dart';
 import 'package:v_flutter_core/src/hooks/hooks.dart';
 import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
 
-Widget Function(Size, Offset) _defaultBuilder(Widget child) {
-  return (Size size, Offset offset) => child;
-}
+Widget Function(Size?, Offset?) _defaultBuilder(Widget child) => (Size? size, Offset? offset) => child;
+void noOpOnChange(Size _, Offset __) {}
 
 class SizeReporter extends HookWidget {
   SizeReporter({
@@ -20,12 +19,12 @@ class SizeReporter extends HookWidget {
     super.key,
     this.childKey,
     required this.builder,
-    required this.onChange,
-  });
+    void Function(Size, Offset)? onChange,
+  }) : onChange = onChange ?? noOpOnChange;
 
   final GlobalKey? childKey;
 
-  final Widget Function(Size size, Offset offset) builder;
+  final Widget Function(Size? size, Offset? offset) builder;
   final void Function(Size size, Offset offset) onChange;
 
   void _onChange(Size? size, Offset? offset) {
@@ -66,8 +65,8 @@ class SizeReporter extends HookWidget {
               child: HookBuilder(
                 builder: (context) {
                   return builder(
-                    useValueListenable(size) ?? Size.zero,
-                    useValueListenable(offset) ?? Offset.zero,
+                    useValueListenable(size),
+                    useValueListenable(offset),
                   );
                 },
               ),
