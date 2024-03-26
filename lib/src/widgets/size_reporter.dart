@@ -19,41 +19,45 @@ class SizeReporter extends HookWidget {
     super.key,
     this.childKey,
     required this.builder,
-    this.onChange,
+    required this.onChange,
   });
 
   final GlobalKey? childKey;
 
   final Widget Function(Size size, Offset offset) builder;
-  final void Function(Size size, Offset offset)? onChange;
+  final void Function(Size size, Offset offset) onChange;
+
+  void _onChange(Size? size, Offset? offset) {
+    if (size == null && offset == null) {
+      return;
+    }
+
+    onChange(size ?? Size.zero, offset ?? Offset.zero);
+  }
 
   @override
   Widget build(BuildContext context) {
     final globalKey = childKey ?? useGlobalKey();
-    final size = useValueNotifier(globalKey.size);
-    final offset = useValueNotifier(globalKey.offset);
+    final size = useValueNotifier(globalKey.maybeSize);
+    final offset = useValueNotifier(globalKey.maybeOffset);
+
+    void _actualizeValuesAndInvokeCallback() {
+      if (context.mounted) {
+        size.value = globalKey.size;
+        offset.value = globalKey.offset;
+
+        _onChange(size.value, offset.value);
+      }
+    }
 
     return NotificationListener<SizeChangedLayoutNotification>(
       onNotification: (_) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            size.value = globalKey.size;
-            offset.value = globalKey.offset;
-
-            onChange?.call(globalKey.size, globalKey.offset);
-          }
-        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _actualizeValuesAndInvokeCallback());
         return true;
       },
       child: HookBuilder(
         builder: (context) {
-          usePlainPostFrameEffect(() {
-            if (context.mounted) {
-              size.value = globalKey.size;
-              offset.value = globalKey.offset;
-              onChange?.call(size.value, offset.value);
-            }
-          });
+          usePlainPostFrameEffect(() => _actualizeValuesAndInvokeCallback());
 
           return SizeChangedLayoutNotifier(
             child: KeyedSubtree(
@@ -61,8 +65,8 @@ class SizeReporter extends HookWidget {
               child: HookBuilder(
                 builder: (context) {
                   return builder(
-                    useValueListenable(size),
-                    useValueListenable(offset),
+                    useValueListenable(size) ?? Size.zero,
+                    useValueListenable(offset) ?? Offset.zero,
                   );
                 },
               ),
@@ -111,27 +115,31 @@ class SizedBy extends HookWidget {
 }
 
 extension GlobalKeyX on GlobalKey {
-  Size get size {
+  Size? get maybeSize {
     if (currentContext == null) {
-      return Size.zero;
+      return null;
     }
 
     final renderBox = currentContext!.findRenderObject() as RenderBox?;
     if (renderBox == null) {
       debugPrint('Could not find RenderBox when trying to resolve size.');
-      return Size.zero;
+      return null;
     } else {
       return renderBox.size;
     }
   }
 
-  Offset get offset {
+  Offset? get maybeOffset {
     final renderBox = currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) {
       debugPrint('Could not find RenderBox when trying to resolve offset.');
-      return Offset.zero;
+      return null;
     } else {
       return renderBox.localToGlobal(Offset.zero);
     }
   }
+
+  Size get size => maybeSize ?? Size.zero;
+
+  Offset get offset => maybeOffset ?? Offset.zero;
 }
