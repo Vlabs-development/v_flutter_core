@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:v_flutter_core/src/hooks/hooks.dart';
 import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
 
-Widget Function(Size, Offset?) _defaultBuilder(Widget child) {
-  return (Size size, Offset? offset) => child;
+Widget Function(Size, Offset) _defaultBuilder(Widget child) {
+  return (Size size, Offset offset) => child;
 }
 
 class SizeReporter extends HookWidget {
@@ -23,12 +24,12 @@ class SizeReporter extends HookWidget {
 
   final GlobalKey? childKey;
 
-  final Widget Function(Size size, Offset? offset) builder;
-  final void Function(Size size, Offset? offset)? onChange;
+  final Widget Function(Size size, Offset offset) builder;
+  final void Function(Size size, Offset offset)? onChange;
 
   @override
   Widget build(BuildContext context) {
-    final globalKey = childKey ?? useState(GlobalKey()).value;
+    final globalKey = childKey ?? useGlobalKey();
     final size = useValueNotifier(globalKey.size);
     final offset = useValueNotifier(globalKey.offset);
 
@@ -117,18 +118,20 @@ extension GlobalKeyX on GlobalKey {
 
     final renderBox = currentContext!.findRenderObject() as RenderBox?;
     if (renderBox == null) {
-      debugPrint('Could not find RenderBox when getSize');
+      debugPrint('Could not find RenderBox when trying to resolve size.');
       return Size.zero;
     } else {
       return renderBox.size;
     }
   }
 
-  Offset? get offset {
+  Offset get offset {
     final renderBox = currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox != null) {
+    if (renderBox == null) {
+      debugPrint('Could not find RenderBox when trying to resolve offset.');
+      return Offset.zero;
+    } else {
       return renderBox.localToGlobal(Offset.zero);
     }
-    return null;
   }
 }
