@@ -1,8 +1,11 @@
+export 'src/extensions/alignment_extensions.dart';
 export 'src/extensions/async_value_extensions.dart';
 export 'src/extensions/bool_extensions.dart';
 export 'src/extensions/build_context_extensions.dart';
 export 'src/extensions/function_extensions.dart';
+export 'src/extensions/global_key_extensions.dart';
 export 'src/extensions/list_extensions.dart';
+export 'src/extensions/size_extensions.dart';
 export 'src/extensions/time_of_day_extensions.dart';
 
 export 'src/hooks/change_notifier_hooks.dart';
@@ -51,7 +54,9 @@ export 'src/widgets/misc/dismissible_portal_target.dart';
 export 'src/widgets/misc/ghost.dart';
 export 'src/widgets/misc/maybe_align.dart';
 export 'src/widgets/misc/portal_dialog.dart';
+export 'src/widgets/misc/size_class_layout.dart';
 export 'src/widgets/misc/tab_visibility_change_recognizer.dart';
+export 'src/widgets/misc/target_platform_widget.dart';
 export 'src/widgets/misc/uninteractable.dart';
 export 'src/widgets/misc/wide.dart';
 export 'src/widgets/progress_button/button_variants.dart';

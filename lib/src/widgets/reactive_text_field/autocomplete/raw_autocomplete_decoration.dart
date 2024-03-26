@@ -233,7 +233,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     return SizeReporter(
       onChange: (size, offset) {
         fieldWidth.value = size.width;
-        availableSpaceBelow.value = MediaQuery.sizeOf(context).height - ((offset?.dy ?? 0) + size.height);
+        availableSpaceBelow.value = MediaQuery.sizeOf(context).height - ((offset.dy) + size.height);
       },
       child: HookBuilder(
         builder: (context) {
