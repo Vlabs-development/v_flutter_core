@@ -54,6 +54,7 @@ export 'src/widgets/misc/dismissible_portal_target.dart';
 export 'src/widgets/misc/ghost.dart';
 export 'src/widgets/misc/maybe_align.dart';
 export 'src/widgets/misc/portal_dialog.dart';
+export 'src/widgets/misc/size_class_layout.dart';
 export 'src/widgets/misc/tab_visibility_change_recognizer.dart';
 export 'src/widgets/misc/target_platform_widget.dart';
 export 'src/widgets/misc/uninteractable.dart';
