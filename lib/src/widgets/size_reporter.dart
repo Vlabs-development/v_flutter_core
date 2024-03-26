@@ -35,19 +35,23 @@ class SizeReporter extends HookWidget {
     return NotificationListener<SizeChangedLayoutNotification>(
       onNotification: (_) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          size.value = globalKey.size;
-          offset.value = globalKey.offset;
+          if (context.mounted) {
+            size.value = globalKey.size;
+            offset.value = globalKey.offset;
 
-          onChange?.call(globalKey.size, globalKey.offset);
+            onChange?.call(globalKey.size, globalKey.offset);
+          }
         });
         return true;
       },
       child: HookBuilder(
         builder: (context) {
           usePlainPostFrameEffect(() {
-            size.value = globalKey.size;
-            offset.value = globalKey.offset;
-            onChange?.call(size.value, offset.value);
+            if (context.mounted) {
+              size.value = globalKey.size;
+              offset.value = globalKey.offset;
+              onChange?.call(size.value, offset.value);
+            }
           });
 
           return SizeChangedLayoutNotifier(
