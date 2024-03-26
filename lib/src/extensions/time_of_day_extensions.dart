@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-extension TimeOfDayExtension on TimeOfDay {
+extension CoreTimeOfDayExtension on TimeOfDay {
   bool isBefore(TimeOfDay other, {bool inclusive = false}) {
     if (inclusive) {
       return toMinutes() < other.toMinutes() || isAt(other);
@@ -85,7 +85,7 @@ extension TimeOfDayExtension on TimeOfDay {
   }
 }
 
-extension NullableTimeOfDayExtension on TimeOfDay? {
+extension CoreNullableTimeOfDayExtension on TimeOfDay? {
   bool isBefore(TimeOfDay? other) {
     if (this == null || other == null) return false;
     return this!.toMinutes() < other.toMinutes();
@@ -130,13 +130,13 @@ extension NullableTimeOfDayExtension on TimeOfDay? {
   }
 }
 
-extension TimeOfDayListExtension on Iterable<TimeOfDay> {
+extension CoreTimeOfDayListExtension on Iterable<TimeOfDay> {
   TimeOfDay? get earliest => isEmpty ? null : reduce((value, element) => value.isBefore(element) ? value : element);
 
   TimeOfDay? get latest => isEmpty ? null : reduce((value, element) => value.isAfter(element) ? value : element);
 }
 
-extension NullableTimeOfDayListExtension on Iterable<TimeOfDay?> {
+extension CoreNullableTimeOfDayListExtension on Iterable<TimeOfDay?> {
   TimeOfDay? get earliest => where((time) => time != null).fold<TimeOfDay?>(
         null,
         (TimeOfDay? current, TimeOfDay? next) =>

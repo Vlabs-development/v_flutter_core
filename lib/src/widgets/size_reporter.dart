@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:v_flutter_core/src/extensions/global_key_extensions.dart';
 import 'package:v_flutter_core/src/hooks/hooks.dart';
 import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
 
@@ -112,34 +113,4 @@ class SizedBy extends HookWidget {
       ],
     );
   }
-}
-
-extension GlobalKeyX on GlobalKey {
-  Size? get maybeSize {
-    if (currentContext == null) {
-      return null;
-    }
-
-    final renderBox = currentContext!.findRenderObject() as RenderBox?;
-    if (renderBox == null) {
-      debugPrint('Could not find RenderBox when trying to resolve size.');
-      return null;
-    } else {
-      return renderBox.size;
-    }
-  }
-
-  Offset? get maybeOffset {
-    final renderBox = currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) {
-      debugPrint('Could not find RenderBox when trying to resolve offset.');
-      return null;
-    } else {
-      return renderBox.localToGlobal(Offset.zero);
-    }
-  }
-
-  Size get size => maybeSize ?? Size.zero;
-
-  Offset get offset => maybeOffset ?? Offset.zero;
 }
