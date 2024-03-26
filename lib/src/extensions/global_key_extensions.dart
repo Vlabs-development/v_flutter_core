@@ -12,7 +12,7 @@ extension CoreGlobalKeyExtensions on GlobalKey {
     if (renderBox == null) {
       return null;
     } else {
-      return renderBox.size;
+      return renderBox.hasSize ? renderBox.size : null;
     }
   }
 
