@@ -66,6 +66,7 @@ export 'src/widgets/reactive_text_field/autocomplete/raw_autocomplete_decoration
 export 'src/widgets/reactive_text_field/autocomplete/search_decoration.dart';
 export 'src/widgets/reactive_text_field/configurable_reactive_text_field.dart';
 export 'src/widgets/reactive_text_field/delegating_reactive_text_field.dart';
+export 'src/widgets/reactive_text_field/delegating_value_accessor.dart';
 export 'src/widgets/reactive_text_field/reactive_text_field_behavior.dart';
 export 'src/widgets/reactive_text_field/reactive_text_field_style.dart';
 export 'src/widgets/reactive_text_field/reactive_text_field_theme.dart';
