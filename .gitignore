@@ -8,3 +8,5 @@ pubspec.lock
 
 # fvm
 .fvm/flutter_sdk
+
+build/
