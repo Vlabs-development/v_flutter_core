@@ -2,12 +2,13 @@ import 'package:reactive_forms/reactive_forms.dart';
 
 /// A generic ControlValueAccessor which receives a delegate for both viewToModel and modelToView to be used.
 /// Also, it can receive a parent to fall back to in case some of the delegates are missing.
-/// Although a delegate function can return null, when that happens the corresponding parent function is returned.
+/// In addition, when [fallbackToParentOnNull] is true (the default) then the parent is used when the delegate returns null.
 class DelegatingValueAccessor<ModelDataType, ViewDataType> extends ControlValueAccessor<ModelDataType, ViewDataType> {
   DelegatingValueAccessor({
     this.modelToView,
     this.viewToModel,
     this.parent,
+    this.fallbackToParentOnNull = true,
   })  : assert(
           parent != null || ((parent == null) && modelToView != null),
           'When parent is null, then modelToView is required.',
@@ -17,21 +18,30 @@ class DelegatingValueAccessor<ModelDataType, ViewDataType> extends ControlValueA
           'When parent is null, then viewToModel is required.',
         ),
         assert(
-          !(modelToView != null && viewToModel != null && parent != null),
-          'When both modelToView and viewToModel is defined, then parent must not be defined.',
+          !(modelToView != null && viewToModel != null && !fallbackToParentOnNull && parent != null),
+          'When both modelToView and viewToModel is defined, and fallbackToParentOnNull is false, then parent is not used.',
         );
 
   ModelDataType? Function(ViewDataType? viewValue)? viewToModel;
   ViewDataType? Function(ModelDataType? modelValue)? modelToView;
   ControlValueAccessor<ModelDataType, ViewDataType>? parent;
+  bool fallbackToParentOnNull;
 
   @override
   ViewDataType? modelToViewValue(ModelDataType? modelValue) {
-    return modelToView?.call(modelValue) ?? parent?.modelToViewValue(modelValue);
+    if (fallbackToParentOnNull) {
+      return modelToView?.call(modelValue) ?? parent?.modelToViewValue(modelValue);
+    } else {
+      return modelToView?.call(modelValue);
+    }
   }
 
   @override
   ModelDataType? viewToModelValue(ViewDataType? viewValue) {
-    return viewToModel?.call(viewValue) ?? parent?.viewToModelValue(viewValue);
+    if (fallbackToParentOnNull) {
+      return viewToModel?.call(viewValue) ?? parent?.viewToModelValue(viewValue);
+    } else {
+      return viewToModel?.call(viewValue);
+    }
   }
 }
