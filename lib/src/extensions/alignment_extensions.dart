@@ -47,7 +47,7 @@ extension CoreAlignmentExtensions on Alignment {
       );
     }
 
-    throw _onlyCornersSupportedException;
+    throw _onlyCornersSupportedException(this);
   }
 
   Aligned get leftAligned {
@@ -66,7 +66,7 @@ extension CoreAlignmentExtensions on Alignment {
       );
     }
 
-    throw _onlyCornersSupportedException;
+    throw _onlyCornersSupportedException(this);
   }
 
   Aligned get rightAligned {
@@ -85,6 +85,6 @@ extension CoreAlignmentExtensions on Alignment {
       );
     }
 
-    throw _onlyCornersSupportedException;
+    throw _onlyCornersSupportedException(this);
   }
 }
