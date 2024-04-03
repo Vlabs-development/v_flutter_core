@@ -9,14 +9,13 @@ export 'src/extensions/size_extensions.dart';
 export 'src/extensions/time_of_day_extensions.dart';
 
 export 'src/hooks/change_notifier_hooks.dart';
-export 'src/hooks/hooks.dart';
 export 'src/hooks/use_animated_list.dart';
 export 'src/hooks/use_async_effect_hooks.dart';
 export 'src/hooks/use_chained_animation_controller.dart';
 export 'src/hooks/use_cleanup.dart';
 export 'src/hooks/use_debounce_callback.dart';
 export 'src/hooks/use_effect_hooks.dart';
-export 'src/hooks/use_focus_node_hooks.dart';
+export 'src/hooks/use_global_key.dart';
 export 'src/hooks/use_interval.dart';
 export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
