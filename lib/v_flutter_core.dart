@@ -17,6 +17,7 @@ export 'src/hooks/use_debounce_callback.dart';
 export 'src/hooks/use_effect_hooks.dart';
 export 'src/hooks/use_global_key.dart';
 export 'src/hooks/use_interval.dart';
+export 'src/hooks/use_memoized_2.dart';
 export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_value_listener.dart';
