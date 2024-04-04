@@ -19,6 +19,7 @@ export 'src/hooks/use_global_key.dart';
 export 'src/hooks/use_interval.dart';
 export 'src/hooks/use_keys.dart';
 export 'src/hooks/use_memoized_2.dart';
+export 'src/hooks/use_memoized_minutely.dart';
 export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
 export 'src/hooks/use_value_listener.dart';
