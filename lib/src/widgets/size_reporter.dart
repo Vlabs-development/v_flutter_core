@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/src/extensions/global_key_extensions.dart';
-import 'package:v_flutter_core/src/hooks/hooks.dart';
 import 'package:v_flutter_core/src/hooks/use_effect_hooks.dart';
+import 'package:v_flutter_core/src/hooks/use_global_key.dart';
 
 Widget Function(Size?, Offset?) _defaultBuilder(Widget child) => (Size? size, Offset? offset) => child;
 void noOpOnChange(Size _, Offset __) {}
