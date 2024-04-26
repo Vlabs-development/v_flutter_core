@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 
 extension CoreStringExtensions on String {
+  /// example usage:
+  /// ```dart
+  /// stringValue.emphasized(
+  ///   pattern: emailRegExp,
+  ///   regular: (value) => TextSpan(text: value),
+  ///   emphasized: (value) => TextSpan(
+  ///     text: value,
+  ///     style: TextStyle(color: Colors.blue),
+  ///     recognizer: TapGestureRecognizer()..onTap = () => openMailTo(email: value),
+  ///   ),
+  /// )
+  /// ```
   List<TextSpan> emphasized({
     required RegExp pattern,
     required TextSpan Function(String value) regular,
