@@ -15,10 +15,9 @@ analyzer:
     - /**/*.gql.dart
     - /**/*.gql.g.dart
 
-  # TODO: enabling this causes a lot of errors, but it's probably a good idea to fix them
-  # language:
-  #   strict-casts: true
-  #   strict-raw-types: true
+  language:
+    strict-casts: true
+    strict-raw-types: true
 
   errors:
     unused_import: warning
