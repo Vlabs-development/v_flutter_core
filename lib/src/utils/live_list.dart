@@ -1,3 +1,5 @@
+// ignore_for_file: sort_constructors_first
+
 import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
@@ -14,6 +16,16 @@ List<(String? Function(dynamic), Stream<void> Function(String))> _empty(dynamic 
 const _dependencyTriggerKey = 'mainTrigger';
 
 class LiveList<ID, T> {
+  final ID Function(T item) resolveId;
+  final Stream<List<T>> itemListStream;
+  final Stream<T> Function(ID id) getItemUpdatedStream;
+  final Stream<T> itemCreatedStream;
+  final bool Function(T item) includePredicate;
+  final bool Function(T item) listenPredicate;
+
+  final _DependencyRecordList<T> Function(T item) getDependencyStreams;
+  final FutureOr<T> Function(ID id)? getItem;
+
   LiveList({
     required this.resolveId,
     required this.itemListStream,
@@ -68,19 +80,10 @@ class LiveList<ID, T> {
       ),
     );
   }
-  final ID Function(T item) resolveId;
-  final Stream<List<T>> itemListStream;
-  final Stream<T> Function(ID id) getItemUpdatedStream;
-  final Stream<T> itemCreatedStream;
-  final bool Function(T item) includePredicate;
-  final bool Function(T item) listenPredicate;
 
-  final _DependencyRecordList<T> Function(T item) getDependencyStreams;
-  final FutureOr<T> Function(ID id)? getItem;
-
-  final _subject = BehaviorSubject<List<T>>();
+  final _subject = BehaviorSubject<Iterable<T>>();
   Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
-  List<T> get items => _subject.value;
+  List<T> get items => _subject.value.toList();
 
   void dispose() {
     _disposableMap.dispose();
@@ -99,7 +102,7 @@ class LiveList<ID, T> {
     return Map.fromEntries(items.map((item) => MapEntry(resolveId(item), getItemUpdatedStream(resolveId(item)))));
   }
 
-  StreamSubscription<List<T>> _onItemsUpdate({
+  StreamSubscription<Iterable<T>> _onItemsUpdate({
     required ID Function(T item) resolveId,
     required void Function(Iterable<T> newItems, Iterable<T> restItems, Iterable<T> removedItems) handle,
   }) {
@@ -182,7 +185,7 @@ class LiveList<ID, T> {
 
   void _removeItemById(ID id) => _update((currentList) => [...currentList]..removeWhere((it) => resolveId(it) == id));
 
-  void _update(List<T> Function(List<T>) callback) {
+  void _update(Iterable<T> Function(Iterable<T>) callback) {
     final currentList = _subject.valueOrNull;
     if (currentList == null) {
       _subject.add(callback([]));
