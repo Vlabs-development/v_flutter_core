@@ -5,6 +5,7 @@ export 'src/extensions/build_context_extensions.dart';
 export 'src/extensions/function_extensions.dart';
 export 'src/extensions/global_key_extensions.dart';
 export 'src/extensions/list_extensions.dart';
+export 'src/extensions/map_extensions.dart';
 export 'src/extensions/size_extensions.dart';
 export 'src/extensions/string_extensions.dart';
 export 'src/extensions/time_of_day_extensions.dart';
