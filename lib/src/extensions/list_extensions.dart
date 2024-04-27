@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 extension CoreIterableExtensions<T> on Iterable<T> {
   /// Put [item] between elements of a non-empty iterable. Empty iterable is returned as is.
   List<T> putBetween(T item) {
@@ -53,6 +55,11 @@ extension CoreIterableExtensions<T> on Iterable<T> {
 
     return list;
   }
+
+  /// Sorts the items by the selected `DateTime?`. null values are put to the end of the list.
+  List<T> sortedByDate(DateTime? Function(T) getDate, {bool ascending = true}) => sortedBy(
+        (item) => _NullableDateTimeComparable(getDate(item), ascending: ascending),
+      );
 }
 
 extension CoreListExtensions<T> on List<T> {
@@ -70,5 +77,28 @@ extension CoreListExtensions<T> on List<T> {
   }) {
     final originalElement = this[index];
     this[index] = map(originalElement);
+  }
+}
+
+class _NullableDateTimeComparable implements Comparable<_NullableDateTimeComparable> {
+  _NullableDateTimeComparable(
+    this.date, {
+    this.ascending = true,
+  });
+
+  final DateTime? date;
+  final bool ascending;
+
+  @override
+  int compareTo(_NullableDateTimeComparable other) {
+    if (date == null && other.date != null) return 1;
+    if (date != null && other.date == null) return -1;
+    if (date == null && other.date == null) return 0;
+
+    if (ascending) {
+      return date!.compareTo(other.date!);
+    } else {
+      return other.date!.compareTo(date!);
+    }
   }
 }
