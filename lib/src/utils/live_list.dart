@@ -8,16 +8,16 @@ import 'package:v_flutter_core/src/utils/disposable/disposable_map.dart';
 import 'package:v_flutter_core/src/utils/disposable/disposable_map_group.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
-typedef _DependencyRecordList<T> = List<(String? Function(T), Stream<void> Function(String))>;
+typedef _DependencyRecordList<T> = Iterable<(String? Function(T), Stream<void> Function(String))>;
 
 bool _alwaysTrue(dynamic value) => true;
-List<(String? Function(dynamic), Stream<void> Function(String))> _empty(dynamic value) => [];
+Iterable<(String? Function(dynamic), Stream<void> Function(String))> _empty(dynamic value) => [];
 
 const _dependencyTriggerKey = 'mainTrigger';
 
 class LiveList<ID, T> {
   final ID Function(T item) resolveId;
-  final Stream<List<T>> itemListStream;
+  final Stream<Iterable<T>> itemListStream;
   final Stream<T> Function(ID id) getItemUpdatedStream;
   final Stream<T> itemCreatedStream;
   final bool Function(T item) includePredicate;
@@ -83,7 +83,7 @@ class LiveList<ID, T> {
 
   final _subject = BehaviorSubject<Iterable<T>>();
   Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
-  List<T> get items => _subject.value.toList();
+  Iterable<T> get items => _subject.value.toList();
 
   void dispose() {
     _disposableMap.dispose();
@@ -179,18 +179,18 @@ class LiveList<ID, T> {
 
   void _mergeItem(T item) => _mergeItems([item]);
 
-  void _mergeItems(List<T> items) => _update((currentList) => currentList.merge(items, equateBy: resolveId));
+  void _mergeItems(Iterable<T> items) => _update((currentItems) => currentItems.merge(items, equateBy: resolveId));
 
-  void _replaceItems(List<T> items) => _update((currentList) => items);
+  void _replaceItems(Iterable<T> items) => _update((currentItems) => items);
 
-  void _removeItemById(ID id) => _update((currentList) => [...currentList]..removeWhere((it) => resolveId(it) == id));
+  void _removeItemById(ID id) => _update((currentItems) => [...currentItems]..removeWhere((it) => resolveId(it) == id));
 
   void _update(Iterable<T> Function(Iterable<T>) callback) {
-    final currentList = _subject.valueOrNull;
-    if (currentList == null) {
+    final currentItems = _subject.valueOrNull;
+    if (currentItems == null) {
       _subject.add(callback([]));
     } else {
-      _subject.add(callback(currentList));
+      _subject.add(callback(currentItems));
     }
   }
 }
