@@ -9,6 +9,7 @@ export 'src/extensions/map_extensions.dart';
 export 'src/extensions/size_extensions.dart';
 export 'src/extensions/string_extensions.dart';
 export 'src/extensions/time_of_day_extensions.dart';
+export 'src/extensions/v_stream.dart';
 
 export 'src/hooks/change_notifier_hooks.dart';
 export 'src/hooks/use_animated_list.dart';
