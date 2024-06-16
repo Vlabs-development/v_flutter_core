@@ -54,6 +54,7 @@ export 'src/widgets/flex/separated_row.dart';
 export 'src/widgets/inheriting_scaffold/delegating_scaffold.dart';
 export 'src/widgets/inheriting_scaffold/inheriting_scaffold.dart';
 export 'src/widgets/inheriting_scaffold/scaffold_behavior.dart';
+export 'src/widgets/layout/adaptive_width_wrap.dart';
 export 'src/widgets/misc/always_scrollbar.dart';
 export 'src/widgets/misc/animated_ghost.dart';
 export 'src/widgets/misc/constraint_adaptive_layout.dart';
