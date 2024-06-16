@@ -57,6 +57,7 @@ export 'src/widgets/inheriting_scaffold/scaffold_behavior.dart';
 export 'src/widgets/misc/always_scrollbar.dart';
 export 'src/widgets/misc/animated_ghost.dart';
 export 'src/widgets/misc/debug_container.dart';
+export 'src/widgets/misc/decorated_single_child_scroll_view.dart';
 export 'src/widgets/misc/dismissible_portal_target.dart';
 export 'src/widgets/misc/ghost.dart';
 export 'src/widgets/misc/maybe_align.dart';
