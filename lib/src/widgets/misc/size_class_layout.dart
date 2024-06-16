@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
+// https://m3.material.io/foundations/layout/applying-layout/window-size-classes
 enum WindowSizeClass { compact, medium, expanded, large, extraLarge }
 
 WidgetBuilder? _builderOrNull(Widget? widget) => widget == null ? null : ((_) => widget);
@@ -27,6 +30,15 @@ extension SizeX on Size {
   WindowSizeClass get windowSizeClass => width.toWindowSizeClass;
 }
 
+/// A widget that adapts its layout based on predefined window size classes.
+/// It considers the width of the viewport to determine the window size class.
+/// [orElse] is the default widget to be displayed if no other widget is specified,
+/// and when the viewport width is larger than all the defined size class layouts.
+///
+/// Eg: if compact (till 600) and medium (till 840) are defined, and the viewport width is 1000, then the [orElse] widget will be displayed.
+///
+/// Smaller window sizes try to match the larger window sizes if not defined.
+/// Eg: if neither compact nor medium is defined, but expanded is defined, then expanded will be displayed for compact and medium window sizes.
 class SizeClassLayout extends HookWidget {
   SizeClassLayout({
     super.key,
@@ -64,17 +76,33 @@ class SizeClassLayout extends HookWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.maybeSizeOf(context);
     assert(size != null, 'Size is null, cannot compute WindowSizeClass');
-    final effectiveSize = size?.windowSizeClass ?? (kIsWeb ? WindowSizeClass.expanded : WindowSizeClass.compact);
+    final effectiveSize = () {
+      final _windowSizeClass = size?.windowSizeClass;
+      if (_windowSizeClass != null) {
+        return _windowSizeClass;
+      }
+
+      if (kIsWeb) {
+        return WindowSizeClass.large;
+      } else {
+        if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+          return WindowSizeClass.expanded;
+        }
+        if (Platform.isIOS || Platform.isAndroid) {
+          return WindowSizeClass.compact;
+        }
+      }
+
+      return WindowSizeClass.expanded;
+    }();
     final widgetBuilder = useMemoized(
-      () =>
-          switch (effectiveSize) {
-            WindowSizeClass.compact => compact,
-            WindowSizeClass.medium => medium,
-            WindowSizeClass.expanded => expanded,
-            WindowSizeClass.large => large,
-            WindowSizeClass.extraLarge => extraLarge,
-          } ??
-          orElse,
+      () => switch (effectiveSize) {
+        WindowSizeClass.compact => compact ?? medium ?? expanded ?? large ?? extraLarge ?? orElse,
+        WindowSizeClass.medium => medium ?? expanded ?? large ?? extraLarge ?? orElse,
+        WindowSizeClass.expanded => expanded ?? large ?? extraLarge ?? orElse,
+        WindowSizeClass.large => large ?? extraLarge ?? orElse,
+        WindowSizeClass.extraLarge => extraLarge ?? orElse,
+      },
       [effectiveSize],
     );
 
