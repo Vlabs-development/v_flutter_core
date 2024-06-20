@@ -76,36 +76,31 @@ class SizeClassLayout extends HookWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.maybeSizeOf(context);
     assert(size != null, 'Size is null, cannot compute WindowSizeClass');
-    final effectiveSize = () {
-      final _windowSizeClass = size?.windowSizeClass;
-      if (_windowSizeClass != null) {
-        return _windowSizeClass;
-      }
-
+    final defaultSizeClass = useMemoized(() {
       if (kIsWeb) {
         return WindowSizeClass.large;
-      } else {
-        if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-          return WindowSizeClass.expanded;
-        }
-        if (Platform.isIOS || Platform.isAndroid) {
-          return WindowSizeClass.compact;
-        }
+      }
+
+      if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+        return WindowSizeClass.expanded;
+      }
+      if (Platform.isIOS || Platform.isAndroid) {
+        return WindowSizeClass.compact;
       }
 
       return WindowSizeClass.expanded;
-    }();
-    final widgetBuilder = useMemoized(
-      () => switch (effectiveSize) {
-        WindowSizeClass.compact => compact ?? medium ?? expanded ?? large ?? extraLarge ?? orElse,
-        WindowSizeClass.medium => medium ?? expanded ?? large ?? extraLarge ?? orElse,
-        WindowSizeClass.expanded => expanded ?? large ?? extraLarge ?? orElse,
-        WindowSizeClass.large => large ?? extraLarge ?? orElse,
-        WindowSizeClass.extraLarge => extraLarge ?? orElse,
-      },
-      [effectiveSize],
-    );
+    });
 
-    return widgetBuilder(context);
+    final effectiveSize = size?.windowSizeClass ?? defaultSizeClass;
+
+    final sizeClassBuilder = switch (effectiveSize) {
+      WindowSizeClass.compact => compact ?? medium ?? expanded ?? large ?? extraLarge ?? orElse,
+      WindowSizeClass.medium => medium ?? expanded ?? large ?? extraLarge ?? orElse,
+      WindowSizeClass.expanded => expanded ?? large ?? extraLarge ?? orElse,
+      WindowSizeClass.large => large ?? extraLarge ?? orElse,
+      WindowSizeClass.extraLarge => extraLarge ?? orElse,
+    };
+
+    return sizeClassBuilder(context);
   }
 }
