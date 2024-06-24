@@ -2,8 +2,6 @@
 // Use of this source code is governed by the MIT license that can be
 // found in the LICENSE file.
 
-// THIS IS A FORK OF reactive_text_field of reactive_forms 16.1.1
-
 import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle;
 
 import 'package:flutter/gestures.dart';
@@ -18,6 +16,11 @@ import 'package:reactive_forms/reactive_forms.dart';
 ///
 /// A [ReactiveForm] ancestor is required.
 ///
+/// THIS IS A FORK OF reactive_text_field of reactive_forms 16.1.1
+/// https://github.com/joanpablo/reactive_forms/blob/16.1.1/lib/src/widgets/reactive_text_field.dart
+/// 
+/// Added the following:
+/// - [showErrorTextWhenEmpty]
 class ReactiveTextField<T> extends ReactiveFormField<T, String> {
   /// Creates a [ReactiveTextField] that contains a [TextField].
   ///

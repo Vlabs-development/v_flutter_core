@@ -16,7 +16,8 @@ dependencies:
   flutter_portal: ^1.1.4
   gap: ^3.0.1
   hooks_riverpod: ^2.4.0
-  reactive_forms: ^16.1.0
+  # Ensure to keep  `/src/widgets/reactive_text_field/reactive_text_field.dart` in sync
+  reactive_forms: ^16.1.1
   reactive_forms_annotations: ^4.0.0
   riverpod: ^2.4.0
   riverpod_annotation: ^2.1.5
