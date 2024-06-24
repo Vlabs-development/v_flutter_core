@@ -18,9 +18,10 @@ import 'package:reactive_forms/reactive_forms.dart';
 ///
 /// THIS IS A FORK OF reactive_text_field of reactive_forms 16.1.1
 /// https://github.com/joanpablo/reactive_forms/blob/16.1.1/lib/src/widgets/reactive_text_field.dart
-/// 
+///
 /// Added the following:
 /// - [showErrorTextWhenEmpty]
+/// - Update [onControlValueChanged] so that the cursor position is maintained when the value does not actually change.
 class ReactiveTextField<T> extends ReactiveFormField<T, String> {
   /// Creates a [ReactiveTextField] that contains a [TextField].
   ///
@@ -252,9 +253,22 @@ class _ReactiveTextFieldState<T> extends ReactiveFocusableFormFieldState<T, Stri
   @override
   void onControlValueChanged(dynamic value) {
     final effectiveValue = (value == null) ? '' : value.toString();
+    final currentValue = _textController.text;
+    final currentSelection = _textController.selection;
+
+    TextSelection updatedSelection;
+    if (effectiveValue == currentValue) {
+      updatedSelection = currentSelection.copyWith(
+        baseOffset: currentSelection.baseOffset.clamp(0, effectiveValue.length),
+        extentOffset: currentSelection.extentOffset.clamp(0, effectiveValue.length),
+      );
+    } else {
+      updatedSelection = TextSelection.collapsed(offset: effectiveValue.length);
+    }
+
     _textController.value = _textController.value.copyWith(
       text: effectiveValue,
-      selection: TextSelection.collapsed(offset: effectiveValue.length),
+      selection: updatedSelection,
       composing: TextRange.empty,
     );
 
