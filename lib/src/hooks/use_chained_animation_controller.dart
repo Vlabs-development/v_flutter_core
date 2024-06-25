@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 AnimationController useChainedAnimationController(
-  Animation parent, {
+  Animation<dynamic> parent, {
   Duration? duration,
   Duration? reverseDuration,
   String? debugLabel,

@@ -36,3 +36,5 @@ linter:
     prefer_single_quotes: true
     avoid_bool_literals_in_conditional_expressions: false
     avoid_positional_boolean_parameters: false
+    prefer_relative_imports: false
+    always_use_package_imports: true
