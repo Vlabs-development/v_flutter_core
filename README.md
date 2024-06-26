@@ -9,10 +9,7 @@ A reusable collection of all the commonly used utilities across V_labs developed
 Add as dependency
 
 ```
-  v_flutter_core:
-    git:
-      url: https://github.com/Vlabs-development/v_flutter_core
-      ref: master
+flutter pub add v_flutter_core
 ```
 
 Import
@@ -20,3 +17,7 @@ Import
 ```
 import 'package:v_flutter_core/v_flutter_core.dart';
 ```
+
+## Example
+
+The [Example project](https://github.com/Vlabs-development/v_flutter_core/tree/develop/example) is deployed to github pages: [DEMO](https://vlabs-development.github.io/v_flutter_core/)
