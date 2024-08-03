@@ -105,6 +105,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
     required this.listBuilder,
     required this.control,
     this.jumpToFirstMatch,
+    this.optionsViewOpenDirection = OptionsViewOpenDirection.down,
     this.customBuilder,
     this.customWidget,
     this.onChanged,
@@ -126,6 +127,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
   final Widget? Function(String value)? customBuilder;
   final Widget? customWidget;
   final String Function(T)? jumpToFirstMatch;
+  final OptionsViewOpenDirection optionsViewOpenDirection;
   final Widget Function(DepthCompositeGroup<K, T> node, bool isHighlighted) groupBuilder;
   final Widget Function(
     DepthCompositeValue<K, T> node,
@@ -250,6 +252,7 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
             ),
             child: RawAutocomplete<DepthCompositeNode<K, T>>(
               textEditingController: effectiveController,
+              optionsViewOpenDirection: optionsViewOpenDirection,
               focusNode: effectiveFocusNode,
               fieldViewBuilder: (context, _, __, onFieldSubmitted) {
                 return HookBuilder(

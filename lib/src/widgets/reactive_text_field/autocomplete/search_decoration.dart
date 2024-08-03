@@ -23,6 +23,7 @@ class SearchDecoration<K, T> extends HookWidget {
     this.offlineSearchContent,
     this.focusNode,
     required this.control,
+    this.optionsViewOpenDirection = OptionsViewOpenDirection.down,
     super.key,
   });
 
@@ -45,6 +46,7 @@ class SearchDecoration<K, T> extends HookWidget {
   final Widget? customWidget;
   final FormControl<K> control;
   final Widget Function(ScrollController controller, List<Widget> children) listBuilder;
+  final OptionsViewOpenDirection optionsViewOpenDirection;
 
   CompositeValue<K, T>? get selectedValue => options.findByKey(selectedKey);
 
@@ -138,6 +140,7 @@ class SearchDecoration<K, T> extends HookWidget {
       customWidget: customWidget,
       groupBuilder: groupBuilder,
       customBuilder: customBuilder,
+      optionsViewOpenDirection: optionsViewOpenDirection,
       valueBuilder: (node, isSelected, isHighlighted, select) {
         if (valueBuilder != null) {
           return valueBuilder!(node, isSelected, isHighlighted, select);
