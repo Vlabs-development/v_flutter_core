@@ -18,6 +18,7 @@ export 'src/hooks/use_async_effect_hooks.dart';
 export 'src/hooks/use_chained_animation_controller.dart';
 export 'src/hooks/use_cleanup.dart';
 export 'src/hooks/use_debounce_callback.dart';
+export 'src/hooks/use_delayed_execution.dart';
 export 'src/hooks/use_effect_hooks.dart';
 export 'src/hooks/use_global_key.dart';
 export 'src/hooks/use_interval.dart';
