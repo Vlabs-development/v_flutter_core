@@ -30,6 +30,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
     required this.listBuilder,
     required this.control,
     this.groupBuilder = defaultGroupAutocompleteBuilder,
+    this.optionsViewOpenDirection = OptionsViewOpenDirection.down,
     this.valueBuilder,
     this.customBuilder,
     this.customWidget,
@@ -57,6 +58,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
   final Widget? customWidget;
   final FormControl<K> control;
   final Widget Function(ScrollController controller, List<Widget> children) listBuilder;
+  final OptionsViewOpenDirection optionsViewOpenDirection;
 
   CompositeValue<K, T>? get selectedValue => options.findByKey(selectedKey);
 
@@ -156,6 +158,7 @@ class AutocompleteDecoration<K, T> extends HookWidget {
       focusNode: effectiveFocusNode,
       controller: effectiveController,
       groupBuilder: groupBuilder,
+      optionsViewOpenDirection: optionsViewOpenDirection,
       jumpToFirstMatch: asYouTypeBehavior.isJumpToFirstMatch ? displayStringForOption : null,
       valueBuilder: (node, isSelected, isHighlighted, select) {
         if (valueBuilder != null) {
