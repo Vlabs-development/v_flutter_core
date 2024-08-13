@@ -105,7 +105,7 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
     TextAlignVertical? textAlignVertical,
     bool autofocus = false,
     bool readOnly = false,
-    EditableTextContextMenuBuilder? contextMenuBuilder = _defaultContextMenuBuilder,
+    EditableTextContextMenuBuilder? contextMenuBuilder = defaultEditableTextContextMenuBuilder,
     bool? showCursor,
     bool obscureText = false,
     String obscuringCharacter = '•',
@@ -231,14 +231,14 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
         );
   final TextEditingController? _textController;
 
-  static Widget _defaultContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
-    return AdaptiveTextSelectionToolbar.editableText(
-      editableTextState: editableTextState,
-    );
-  }
-
   @override
   ReactiveFormFieldState<T, String> createState() => _ReactiveTextFieldState<T>();
+}
+
+Widget defaultEditableTextContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
+  return AdaptiveTextSelectionToolbar.editableText(
+    editableTextState: editableTextState,
+  );
 }
 
 class _ReactiveTextFieldState<T> extends ReactiveFocusableFormFieldState<T, String> {
