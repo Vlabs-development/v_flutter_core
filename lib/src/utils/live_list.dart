@@ -115,13 +115,9 @@ class LiveList<ID, T> {
 
     final completer = HandshakeCompleter<T>();
     _deferredItemTriggers[id] = completer;
-    timedDP('⏰⚪ (${completer.hashCode}) Creating deferrer for $id');
     completer.future.then((value) {
-      timedDP('⏰🟢 (${completer.hashCode}) Deferrer for $id completed');
-
       return _deferredItemTriggers.remove(id);
     }).catchError((_) {
-      timedDP('⏰🔴 (${completer.hashCode}) Deferrer for $id errored');
       return _deferredItemTriggers.remove(id);
     });
 
@@ -171,10 +167,8 @@ class LiveList<ID, T> {
             try {
               _needsEmittingDeferredItem.putIfAbsent(id, () => true);
               _deferredItemTriggerCounts[id] = (_deferredItemTriggerCounts[id] ?? 0) + 1;
-              timedDP('⏰🟡 (${completer.hashCode}) Awaiting ⏳');
               final deferredItem = await deferredItemFuture;
               if (_needsEmittingDeferredItem[id] ?? false) {
-                timedDP('⏰ (${completer.hashCode}) ADDING ITEM ⏳');
                 addItem(deferredItem);
                 _needsEmittingDeferredItem.remove(id);
               }
@@ -192,7 +186,6 @@ class LiveList<ID, T> {
               return null;
             } finally {
               if (!completer.isHandshaked) {
-                timedDP('⏰🟢 (${completer.hashCode}) Handshaking 🤝');
                 completer.handshake();
               }
               _hasReturnedIdAfterDeferred[id] = false; // Reset the flag for the next defer
