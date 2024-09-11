@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Refactor LiveList
+
 ## 0.0.4
 
 - fix: define fallback defaultEditableTextContextMenuBuilder if behaviour misses it ([#49](https://github.com/Vlabs-development/v_flutter_core/pull/49))

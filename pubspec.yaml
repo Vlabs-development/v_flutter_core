@@ -1,7 +1,7 @@
 name: v_flutter_core
 description: vlabs core library
 repository: https://github.com/Vlabs-development/v_flutter_core
-version: 0.0.4
+version: 0.0.5
 
 environment:
   sdk: ^3.1.0
