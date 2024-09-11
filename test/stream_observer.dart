@@ -13,12 +13,13 @@ class StreamObserver<T> {
       debugPrint(' >> listen');
       _listenCountSubject.add(_listenCountSubject.valueOrNull ?? 0 + 1);
     }).doOnData((event) {
-      debugPrint(' >> data');
+      debugPrint(' >> data $event');
       _emitCountSubject.add(_emitCountSubject.valueOrNull ?? 0 + 1);
     }).doOnCancel(() {
       debugPrint(' >> cancel');
       _cancelCountSubject.add(_cancelCountSubject.valueOrNull ?? 0 + 1);
       if (!stream.isBroadcast) {
+        _emitCountSubject.close();
         _cancelCountSubject.close();
         _listenCountSubject.close();
       }

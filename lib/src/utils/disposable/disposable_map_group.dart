@@ -2,17 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-class DisposableMapGroup<IDType, IDSubType> {
+class DisposableMapGroup<KeyType, SubKeyType> {
   DisposableMapGroup({this.onDispose});
 
-  Map<IDType, Map<IDSubType, VoidCallback>> cleanupCallbacks = {};
+  Map<KeyType, Map<SubKeyType, VoidCallback>> cleanupCallbacks = {};
   VoidCallback? onDispose;
 
-  void addStreamSubscription(IDType key, IDSubType subKey, StreamSubscription<dynamic> sub) {
+  void addStreamSubscription(KeyType key, SubKeyType subKey, StreamSubscription<dynamic> sub) {
     addDisposing(key, subKey, sub.cancel);
   }
 
-  void addDisposing(IDType key, IDSubType subKey, VoidCallback cleanup) {
+  void addOrReplaceStreamSubscription(KeyType key, SubKeyType subKey, StreamSubscription<dynamic> sub) {
+    addOrReplaceDisposing(key, subKey, sub.cancel);
+  }
+
+  void addDisposing(KeyType key, SubKeyType subKey, VoidCallback cleanup) {
     if (!cleanupCallbacks.containsKey(key)) {
       cleanupCallbacks[key] = {};
     }
@@ -22,14 +26,25 @@ class DisposableMapGroup<IDType, IDSubType> {
     cleanupCallbacks[key]![subKey] = cleanup;
   }
 
-  void removeByKey(IDType key) {
+  void addOrReplaceDisposing(KeyType key, SubKeyType subKey, VoidCallback cleanup) {
+    if (!cleanupCallbacks.containsKey(key)) {
+      cleanupCallbacks[key] = {};
+    }
+    if (cleanupCallbacks[key]!.containsKey(subKey)) {
+      cleanupCallbacks[key]![subKey]!.call();
+      debugPrint('__ a disposable already exists under $key > $subKey, disposing that and storing new one.');
+    }
+    cleanupCallbacks[key]![subKey] = cleanup;
+  }
+
+  void removeByKey(KeyType key) {
     if (cleanupCallbacks.containsKey(key)) {
       final subMap = cleanupCallbacks.remove(key);
       subMap?.forEach((_, cleanup) => cleanup());
     }
   }
 
-  void removeByKeys(IDType key, IDSubType subKey) {
+  void removeByKeys(KeyType key, SubKeyType subKey) {
     if (cleanupCallbacks.containsKey(key)) {
       final subMap = cleanupCallbacks[key];
       if (subMap != null && subMap.containsKey(subKey)) {
@@ -39,17 +54,19 @@ class DisposableMapGroup<IDType, IDSubType> {
     }
   }
 
-  bool containsKeys(IDType key, IDSubType subKey) {
+  bool containsKeys(KeyType key, SubKeyType subKey) {
     return cleanupCallbacks.containsKey(key) && cleanupCallbacks[key]!.containsKey(subKey);
   }
 
-  Iterable<IDSubType> getSubKeys(IDType key) {
+  Iterable<SubKeyType> getSubKeys(KeyType key) {
     if (cleanupCallbacks.containsKey(key)) {
       return cleanupCallbacks[key]!.keys;
     }
 
     return [];
   }
+
+  Iterable<SubKeyType> getAllSubKeys() => cleanupCallbacks.values.map((e) => e.keys).expand((e) => e);
 
   void dispose() {
     for (final subMap in cleanupCallbacks.values) {

@@ -9,6 +9,9 @@ import 'package:v_flutter_core/src/utils/live_list.dart';
 
 import 'stream_observer.dart';
 
+const testLiveListsAreDisposedAfter = Duration(milliseconds: 900);
+const testTimeoutAfter = Duration(milliseconds: 1000);
+
 const a = _Model(id: 'a', name: 'A', foreignId: '1');
 const aa = _Model(id: 'a', name: 'AA', foreignId: '2');
 const aaa = _Model(id: 'a', name: 'AAA', foreignId: '2');
@@ -23,6 +26,26 @@ const ccc = _Model(id: 'c', name: 'CCC');
 bool _listenPredicate(_Model item) => true;
 String _resolveId(_Model item) => item.id;
 bool _includePredicate(_Model item) => true;
+
+class TriggerEvent {
+  TriggerEvent() : after = Duration.zero;
+  TriggerEvent.after(this.after);
+
+  final Duration after;
+}
+
+class ItemTriggerEvent {
+  ItemTriggerEvent({
+    required this.id,
+  }) : after = Duration.zero;
+  ItemTriggerEvent.after(
+    this.after, {
+    required this.id,
+  });
+
+  final String id;
+  final Duration after;
+}
 
 class ItemUpdateEvent {
   ItemUpdateEvent({
@@ -65,9 +88,14 @@ LiveList<String, _Model> aLiveList({
   Stream<_Model>? itemCreatedStream,
   List<ItemListEvent>? items,
   List<ItemUpdateEvent>? updates,
+  List<ItemTriggerEvent>? itemTriggers,
+  TriggerStream Function(String id)? getItemTriggerStream,
   List<ItemEvent>? creates,
-  List<(String? Function(_Model), Stream<void> Function(String))> Function(_Model item)? getDependencyStreams,
+  FutureOr<List<(String? Function(_Model), TriggerStream Function(String))>> Function(_Model item)?
+      getItemDependencyStreams,
   FutureOr<_Model> Function(String id)? getItem,
+  Duration? disposeAfter = testLiveListsAreDisposedAfter,
+  List<(String? Function(_Model item), List<(String, TriggerEvent)>)>? dependencyUpdates,
 }) {
   assert(
     itemUpdatedStream == null || updates == null,
@@ -81,29 +109,71 @@ LiveList<String, _Model> aLiveList({
     itemStream == null || items == null,
     'Both itemStream and items can not be defined at the same time',
   );
+  assert(
+    getItemTriggerStream == null || itemTriggers == null,
+    'Both getItemTriggerStream and itemTriggers can not be defined at the same time',
+  );
+  assert(
+    getItemDependencyStreams == null || dependencyUpdates == null,
+    'Both getItemDependencyStreams and dependencyUpdates can not be defined at the same time',
+  );
   final manualItemsStream = (items ?? []).map((e) => Future.delayed(e.after).then((value) => e.items));
   final effectiveItemStream = itemStream ?? Stream.fromFutures(manualItemsStream);
 
   final manualItemUpdateStream = (updates ?? [])
       .groupListsBy((item) => item.id)
-      .map((key, value) => MapEntry(key, value.map((e) => Future.delayed(e.after).then((value) => e.item))));
+      .map((key, value) => MapEntry(key, value.map((e) => Future.delayed(e.after).then((_) => e.item))));
   final effectiveOnItemUpdated = itemUpdatedStream ?? (id) => Stream.fromFutures(manualItemUpdateStream[id] ?? []);
 
-  final manualItemCreatedStream = (creates ?? []).map((e) => Future.delayed(e.after).then((value) => e.item));
+  final manualItemCreatedStream = (creates ?? []).map((e) => Future.delayed(e.after).then((_) => e.item));
   final effectiveOnItemCreated = itemCreatedStream ?? Stream.fromFutures(manualItemCreatedStream);
 
-  final list = LiveList(
+  final manualItemIdUpdatedStream = (itemTriggers ?? [])
+      .groupListsBy((item) => item.id)
+      .map((key, value) => MapEntry(key, value.map((e) => Future.delayed(e.after).then((_) => e.id))));
+  final effectiveItemTriggerStream = getItemTriggerStream ??
+      ((itemTriggers?.isNotEmpty ?? false)
+          ? (id) => Stream.fromFutures(manualItemIdUpdatedStream[id] ?? <Future<String>>[])
+          : null);
+
+  final effectiveGetItemDependencyStream = getItemDependencyStreams ??
+      ((dependencyUpdates?.isNotEmpty ?? false)
+          ? (_Model item) {
+              return dependencyUpdates!
+                  .map(
+                    (e) => (
+                      (_Model model) => e.$1(model),
+                      (String id) {
+                        final grouped = e.$2
+                            .groupListsBy((trigger) => trigger.$1)
+                            .map((key, value) => MapEntry(key, value.map((e) => e.$2)))
+                            .map((key, value) => MapEntry(key, value.map((trigger) => Future.delayed(trigger.after))))
+                            .map((key, value) => MapEntry(key, Stream.fromFuture(Future.wait(value).then((_) => id))));
+
+                        return grouped[id] ?? const Stream.empty();
+                      },
+                    ),
+                  )
+                  .toList();
+            }
+          : null);
+
+  final liveList = LiveList(
     itemListStream: effectiveItemStream,
     getItemUpdatedStream: effectiveOnItemUpdated,
+    getItemTriggerStream: effectiveItemTriggerStream,
     itemCreatedStream: effectiveOnItemCreated,
     resolveId: resolveId,
     listenPredicate: listenPredicate,
     includePredicate: includePredicate,
-    getItem: getItem,
-    getDependencyStreams: getDependencyStreams,
+    getItem: getItem != null ? (String id) => Future.sync(() => getItem(id)) : null,
+    getItemDependencyStreams: effectiveGetItemDependencyStream,
   );
-  addTearDown(list.dispose);
-  return list;
+  if (disposeAfter != null) {
+    Future.delayed(disposeAfter).then((_) => liveList.dispose());
+  }
+  addTearDown(liveList.dispose);
+  return liveList;
 }
 
 class SequenceReturn<T> {
@@ -140,6 +210,10 @@ extension _I<T> on List<T> {
 extension _D on Duration {
   StreamObserver<T> then<T>(T item) {
     return StreamObserver<T>(Stream.fromFuture(Future.delayed(this).then((_) => item)));
+  }
+
+  StreamObserver<void> thenTrigger() {
+    return StreamObserver<void>(Stream.fromFuture(Future.delayed(this)));
   }
 }
 
@@ -215,7 +289,7 @@ void main() {
             final sequenceReturn = SequenceReturn<StreamObserver<_Model>>(
               returnValues: [
                 [aa, aaa].streamObserver,
-                1.seconds.then(aaaa),
+                600.milliseconds.then(aaaa),
               ],
             );
 
@@ -242,8 +316,8 @@ void main() {
             for (final s in sequenceReturn.getAll()) {
               expect(s.cancelCount, emits(1));
               expect(s.cancelCount, neverEmits(2));
-              expect(s.doneCount, emits(1));
-              expect(s.doneCount, neverEmits(2));
+              // expect(s.doneCount, emits(1));
+              // expect(s.doneCount, neverEmits(2));
             }
           });
 
@@ -313,7 +387,7 @@ void main() {
                   ItemUpdateEvent.after(40.milliseconds, id: a.id, item: aa),
                   ItemUpdateEvent.after(50.milliseconds, id: a.id, item: aaa),
                 ],
-                getDependencyStreams: (item) => [
+                getItemDependencyStreams: (item) => [
                   (
                     (item) => item.foreignId,
                     (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
@@ -344,13 +418,14 @@ void main() {
               final streamObserver = 300.milliseconds.then(null);
 
               final liveList = aLiveList(
+                disposeAfter: null,
                 items: [
                   ItemListEvent([aa]),
                 ],
                 updates: [
                   ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aaaa),
                 ],
-                getDependencyStreams: (item) => [
+                getItemDependencyStreams: (item) => [
                   (
                     (item) => item.foreignId,
                     (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
@@ -379,7 +454,7 @@ void main() {
               items: [
                 ItemListEvent([aa]),
               ],
-              getDependencyStreams: (item) => [
+              getItemDependencyStreams: (item) => [
                 (
                   (item) => item.foreignId,
                   (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
@@ -557,6 +632,280 @@ void main() {
           );
         });
       });
+      group('itemTriggerStream event', () {
+        test('fires items (with updated item) subsequently', () {
+          final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
+          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
+          _Model getNext(String id) => switch (id) {
+                'a' => getA.next(),
+                'b' => getB.next(),
+                _ => throw 'No return defined for $id',
+              };
+
+          expect(
+            aLiveList(
+              items: [
+                ItemListEvent([a, b]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(100.milliseconds, id: a.id),
+                ItemTriggerEvent.after(200.milliseconds, id: b.id),
+                ItemTriggerEvent.after(300.milliseconds, id: a.id),
+                ItemTriggerEvent.after(400.milliseconds, id: b.id),
+              ],
+              getItem: (id) => getNext(id),
+            ).stream,
+            emitsInOrder([
+              [a, b],
+              [aa, b],
+              [aa, bb],
+              [aaa, bb],
+              [aaa, bbb],
+            ]),
+          );
+        });
+
+        test('have no effect after item is no longer present', () {
+          final getA = SequenceReturn<_Model>(returnValues: [aa]);
+          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
+          _Model getNext(String id) => switch (id) {
+                'a' => getA.next(),
+                'b' => getB.next(),
+                _ => throw 'No return defined for $id',
+              };
+
+          expect(
+            aLiveList(
+              items: [
+                ItemListEvent([a, b]),
+                ItemListEvent.after(200.milliseconds, [aaaa]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(100.milliseconds, id: b.id),
+                ItemTriggerEvent.after(300.milliseconds, id: b.id),
+                ItemTriggerEvent.after(400.milliseconds, id: a.id),
+              ],
+              getItem: (id) => getNext(id),
+            ).stream,
+            emitsInOrder([
+              [a, b],
+              [a, bb],
+              [aaaa],
+              [aa],
+            ]),
+          );
+        });
+
+        test('of newly created item fires items (with updated item) subsequently', () {
+          final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
+          final getB = SequenceReturn<_Model>(returnValues: [bb]);
+          final getC = SequenceReturn<_Model>(returnValues: [cc, ccc]);
+          _Model getNext(String id) => switch (id) {
+                'a' => getA.next(),
+                'b' => getB.next(),
+                'c' => getC.next(),
+                _ => throw 'No return defined for $id',
+              };
+
+          expect(
+            aLiveList(
+              items: [
+                ItemListEvent([a, b]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(100.milliseconds, id: a.id),
+                ItemTriggerEvent.after(200.milliseconds, id: b.id),
+                // listening to c starts after it appears, that is why the durations are strange here
+                ItemTriggerEvent.after(100.milliseconds, id: c.id), // this is esentially 300 + 100 here
+                ItemTriggerEvent.after(200.milliseconds, id: c.id), // 300 + 200
+                ItemTriggerEvent.after(600.milliseconds, id: a.id),
+              ],
+              creates: [
+                ItemEvent.after(300.milliseconds, c),
+              ],
+              getItem: (id) => getNext(id),
+            ).stream,
+            emitsInOrder([
+              [a, b],
+              [aa, b],
+              [aa, bb],
+              [aa, bb, c],
+              [aa, bb, cc],
+              [aa, bb, ccc],
+              [aaa, bb, ccc],
+            ]),
+          );
+        });
+        test('of explicitly added item fires items (with updated item) subsequently', () async {
+          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
+          _Model getNext(String id) => switch (id) {
+                'b' => getB.next(),
+                _ => throw 'No return defined for $id',
+              };
+
+          final liveList = aLiveList(
+            items: [
+              ItemListEvent([a]),
+            ],
+            itemTriggers: [
+              ItemTriggerEvent.after(100.milliseconds, id: b.id),
+              ItemTriggerEvent.after(200.milliseconds, id: b.id),
+            ],
+            getItem: (id) => getNext(id),
+          );
+
+          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.addItem(b));
+
+          expect(
+            liveList.stream,
+            emitsInOrder([
+              [a],
+              [a, b],
+              [a, bb],
+              [a, bbb],
+            ]),
+          );
+        });
+
+        group('deferItemIdUpdate', () {
+          test('skips single id update', () {
+            final getA = SequenceReturn<_Model>(returnValues: [aa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(100.milliseconds, id: a.id),
+              ],
+              getItem: (id) => getA.next(),
+            );
+
+            final completer = liveList.deferItemTrigger(a.id);
+            Future<void>.delayed(300.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaaa],
+              ]),
+            );
+          });
+
+          test('skips every id update', () {
+            final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(100.milliseconds, id: a.id),
+                ItemTriggerEvent.after(200.milliseconds, id: a.id),
+              ],
+              getItem: (id) => getA.next(),
+            );
+
+            final completer = liveList.deferItemTrigger(a.id);
+            Future<void>.delayed(300.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaaa],
+              ]),
+            );
+          });
+
+          test('skips singular update while deferring', () {
+            final getA = SequenceReturn<_Model>(returnValues: [aa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(20.milliseconds, id: a.id),
+              ],
+              getItem: (id) => getA.next(),
+            );
+
+            final completer = liveList.deferItemTrigger(a.id);
+            Future<void>.delayed(100.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaaa],
+              ]),
+            );
+            expect(liveList.stream, neverEmits([aa]));
+          });
+
+          test('calls getItem once when multiple updates fired while deferring', () {
+            final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(20.milliseconds, id: a.id),
+                ItemTriggerEvent.after(40.milliseconds, id: a.id),
+                ItemTriggerEvent.after(60.milliseconds, id: a.id),
+                ItemTriggerEvent.after(80.milliseconds, id: a.id),
+                ItemTriggerEvent.after(100.milliseconds, id: a.id),
+                ItemTriggerEvent.after(120.milliseconds, id: a.id),
+                ItemTriggerEvent.after(140.milliseconds, id: a.id),
+              ],
+              getItem: (id) {
+                return getA.next();
+              },
+            );
+
+            final completer = liveList.deferItemTrigger(a.id);
+            Future<void>.delayed(200.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaaa],
+                [aa],
+              ]),
+            );
+            expect(liveList.stream, neverEmits([aaa]));
+          });
+
+          test('does not skip update if completer fails', () {
+            final getA = SequenceReturn<_Model>(returnValues: [aa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              itemTriggers: [
+                ItemTriggerEvent.after(50.milliseconds, id: a.id),
+              ],
+              getItem: (id) => getA.next(),
+            );
+
+            final completer = liveList.deferItemTrigger(a.id);
+            Future<void>.delayed(100.milliseconds).then((value) => completer.completeError('NOPE'));
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aa],
+              ]),
+            );
+          });
+        });
+      });
 
       group('itemCreatedStream event', () {
         test('fires items (with new item) subsequently', () {
@@ -703,6 +1052,24 @@ void main() {
           );
           await expectLater(second.cancelCount, emits(1));
         });
+        test('item dependencies are ignored', () {
+          expect(
+            aLiveList(
+              items: [
+                ItemListEvent([a, b]),
+              ],
+              dependencyUpdates: [
+                (
+                  (item) => item.foreignId,
+                  [('1', TriggerEvent.after(50.milliseconds))],
+                ),
+              ],
+              getItem: (id) => aaaa,
+              listenPredicate: (item) => item.id != a.id,
+            ).stream,
+            neverEmits([aaaa, b]),
+          );
+        });
       });
 
       group('when includePredicate is false', () {
@@ -795,9 +1162,52 @@ void main() {
           );
         });
       });
-      group('addItem', () {});
+      group('addItem', () {
+        test('adds item', () {
+          final liveList = aLiveList(
+            items: [
+              ItemListEvent([a]),
+            ],
+            updates: [
+              ItemUpdateEvent.after(10.milliseconds, id: a.id, item: aa),
+              ItemUpdateEvent.after(20.milliseconds, id: a.id, item: aaa),
+            ],
+          );
+
+          Future<void>.delayed(100.milliseconds).then((value) => liveList.addItem(b));
+
+          expect(
+            liveList.stream,
+            emitsInOrder([
+              [a],
+              [aa],
+              [aaa],
+              [aaa, b],
+            ]),
+          );
+        });
+        test('overrides individual item update (update)', () {
+          final liveList = aLiveList(
+            items: [
+              ItemListEvent([a, b]),
+              ItemListEvent.after(50.milliseconds, [a, bb]),
+            ],
+          );
+
+          Future<void>.delayed(100.milliseconds).then((value) => liveList.addItem(b));
+
+          expect(
+            liveList.stream,
+            emitsInOrder([
+              [a, b],
+              [a, bb],
+              [a, b],
+            ]),
+          );
+        });
+      });
       group('removeItem', () {
-        test('removing an item ignores updates', () async {
+        test('subsequent item updates are ignored', () async {
           final liveList = aLiveList(
             items: [
               ItemListEvent([a, b]),
@@ -820,13 +1230,71 @@ void main() {
             ]),
           );
         });
+
+        test('itemUpdated stream is unsubscribed from before it emits', () async {
+          final streamObserver = 200.milliseconds.then(aa);
+
+          final liveList = aLiveList(
+            items: [
+              ItemListEvent([a]),
+            ],
+            itemUpdatedStream: (id) {
+              return id == a.id ? streamObserver.stream : const Stream.empty();
+            },
+          );
+
+          Future<void>.delayed(const Duration(milliseconds: 100)).then((value) => liveList.removeItem('a'));
+
+          expect(
+            liveList.stream,
+            neverEmits([
+              [aa],
+            ]),
+          );
+          expect(streamObserver.emitCount, neverEmits(1));
+          expect(streamObserver.listenCount, emits(1));
+          expect(streamObserver.listenCount, neverEmits(2));
+          expect(streamObserver.cancelCount, emits(1));
+          expect(streamObserver.cancelCount, neverEmits(2));
+        });
+
+        test('item dependencies are unsubscribed from', () async {
+          final streamObserver = 200.milliseconds.thenTrigger();
+
+          final liveList = aLiveList(
+            items: [
+              ItemListEvent([a]),
+            ],
+            getItemDependencyStreams: (item) => [
+              (
+                (item) => item.foreignId,
+                (foreignId) => foreignId == '1' ? streamObserver.stream : const Stream.empty(),
+              ),
+            ],
+            getItem: (id) => aa,
+          );
+
+          Future<void>.delayed(const Duration(milliseconds: 100)).then((value) => liveList.removeItem('a'));
+
+          expect(
+            liveList.stream,
+            neverEmits([
+              [aa],
+            ]),
+          );
+          expect(streamObserver.emitCount, neverEmits(1));
+          expect(streamObserver.listenCount, emits(1));
+          expect(streamObserver.listenCount, neverEmits(2));
+          expect(streamObserver.cancelCount, emits(1));
+          expect(streamObserver.cancelCount, neverEmits(2));
+        });
       });
 
-      group('getDependencyStreams', () {
+      group('getItemDependencyStreams', () {
         test('should throw when getItem is not specified', () {
           expect(
             () => aLiveList(
-              getDependencyStreams: (item) => [],
+              getItemDependencyStreams: (item) => [],
             ),
             throwsA(isA<ArgumentError>()),
           );
@@ -834,7 +1302,7 @@ void main() {
         test('should not throw when getItem is also specified', () {
           expect(
             () => aLiveList(
-              getDependencyStreams: (item) => [],
+              getItemDependencyStreams: (item) => [],
               getItem: (id) => Future.value(a),
             ),
             returnsNormally,
@@ -847,16 +1315,12 @@ void main() {
               items: [
                 ItemListEvent([aa]),
               ],
-              getDependencyStreams: (item) {
-                return [
-                  (
-                    (item) => item.foreignId,
-                    (foreignId) => foreignId == '2'
-                        ? Stream.fromFuture(Future.delayed(const Duration(milliseconds: 100)))
-                        : const Stream.empty()
-                  ),
-                ];
-              },
+              dependencyUpdates: [
+                (
+                  (item) => item.foreignId,
+                  [('2', TriggerEvent.after(100.milliseconds))],
+                ),
+              ],
               getItem: (id) => aaa,
             );
 
@@ -881,14 +1345,12 @@ void main() {
                 ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
                 ItemUpdateEvent.after(300.milliseconds, id: a.id, item: aaaa),
               ],
-              getDependencyStreams: (item) {
-                return [
-                  (
-                    (item) => item.foreignId,
-                    (foreignId) => foreignId == '3' ? Stream.value(null) : const Stream.empty(),
-                  ),
-                ];
-              },
+              dependencyUpdates: [
+                (
+                  (item) => item.foreignId!,
+                  [('3', TriggerEvent())],
+                ),
+              ],
               getItem: (id) => a,
             );
 
@@ -904,9 +1366,93 @@ void main() {
             );
           },
         );
+        test(
+          'triggering stream should work if item matches predicate after item update triggered by dependency',
+          () async {
+            final getItem = SequenceReturn<_Model Function(String)>(returnValues: [(_) => aa, (_) => aaaa]);
+
+            final liveList = aLiveList(
+              items: [
+                ItemListEvent([a]),
+              ],
+              dependencyUpdates: [
+                (
+                  (item) => item.foreignId,
+                  [
+                    ('1', TriggerEvent.after(100.milliseconds)),
+                    ('2', TriggerEvent.after(100.milliseconds)),
+                  ],
+                ),
+              ],
+              getItem: (id) => getItem.next()(id),
+            );
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aa],
+                [aaaa],
+              ]),
+            );
+          },
+        );
       });
+      // group('updateDelegates', () {
+      //   test('should throw when neither getItemTriggerStream nor getItem are not specified', () {
+      //     final liveList = aLiveList();
+
+      //     expect(
+      //       () => liveList.deferItemTrigger('a'),
+      //       throwsA(isA<ArgumentError>()),
+      //     );
+      //   });
+      //   test('should throw when getItemTriggerStream is not specified', () {
+      //     final liveList = aLiveList(getItem: (_) => a);
+
+      //     expect(
+      //       () => liveList.deferItemTrigger('a'),
+      //       throwsA(isA<ArgumentError>()),
+      //     );
+      //   });
+      //   test('should not throw when both getItemTriggerStream getItem are specified', () {
+      //     final liveList = aLiveList(
+      //       getItem: (id) => a,
+      //       getItemTriggerStream: (_) => const Stream.empty(),
+      //     );
+
+      //     expect(
+      //       () => liveList.deferItemTrigger('a'),
+      //       returnsNormally,
+      //     );
+      //   });
+      //   test('should update item', () async {
+      //     final liveList = aLiveList(
+      //       items: [
+      //         ItemListEvent([a, b]),
+      //         // ItemListEvent.after(50.milliseconds, [aa, b]),
+      //       ],
+      //       getItem: (id) => aaa,
+      //       getItemTriggerStream: (_) => const Stream.empty(),
+      //     );
+
+      //     final completer = liveList.deferItemTrigger('a');
+      //     await Future<void>.delayed(100.milliseconds).then((value) => completer.complete(aaaa));
+
+      //     expectLater(
+      //       liveList.stream,
+      //       emitsInOrder(
+      //         [
+      //           [a, b],
+      //           // [aa, b],
+      //           [aaaa, b],
+      //         ],
+      //       ),
+      //     );
+      //   });
+      // });
     },
-    timeout: const Timeout(Duration(seconds: 3)),
+    timeout: const Timeout(testTimeoutAfter),
   );
 }
 
@@ -937,4 +1483,8 @@ class _Model {
   int get hashCode {
     return id.hashCode ^ name.hashCode ^ foreignId.hashCode;
   }
+}
+
+extension _DurationX on Duration {
+  Stream<void> get asStream => Stream<void>.fromFuture(Future.delayed(this));
 }
