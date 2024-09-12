@@ -104,6 +104,21 @@ class LiveList<ID, T> {
   void addItem(T externalItem) => _mergeItem(externalItem);
   void removeItem(ID id) => _removeItemById(id);
 
+  Future<Either<Object?, T>?> refreshItem(ID id) async {
+    final _getItem = getItem;
+
+    if (_getItem == null) {
+      return const Left('getItem is not defined');
+    }
+
+    final item = await _getItem.run(id);
+    item.match(
+      (l) => null,
+      (updatedItem) => _mergeItem(updatedItem),
+    );
+    return item;
+  }
+
   /// The returned [HandshakeCompleter] gives a handle to control the case when an async action that returns a [T] is in progress
   /// (which should be represented by the [HandshakeCompleter] future) and meanwhile there is either an itemTriggerStream or a
   /// itemDependencyStream event occuring. For such cases the event is not directly mapped to a [getItem] call
