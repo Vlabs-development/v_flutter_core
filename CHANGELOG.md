@@ -1,3 +1,7 @@
+## 0.0.6
+
+- add refreshItem to LiveList
+
 ## 0.0.5
 
 - Refactor LiveList
