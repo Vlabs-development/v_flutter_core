@@ -9,19 +9,24 @@ extension CoreRefExtensions on Ref<dynamic> {
   Stream<T> streamOfAsyncData<T>(
     AlwaysAliveProviderListenable<AsyncValue<T>> provider, {
     bool fireImmediately = false,
-    bool skipAsyncError = true,
+    bool skipError = true,
+    bool skipLoadingOnReload = false,
+    bool skipLoadingOnRefresh = true,
+    bool broadcast = false,
   }) {
-    final StreamController<T> controller = StreamController();
+    final StreamController<T> controller = broadcast ? StreamController.broadcast() : StreamController();
+    onDispose(() => controller.close());
 
     listen(
       provider,
       (_, next) => next.whenOrNull(
         data: (value) => controller.add(value),
-        error: (error, stackTrace) => skipAsyncError ? null : controller.addError(error, stackTrace),
+        error: (error, stackTrace) => skipError ? null : controller.addError(error, stackTrace),
+        skipLoadingOnRefresh: skipLoadingOnRefresh,
+        skipLoadingOnReload: skipLoadingOnReload,
       ),
       fireImmediately: fireImmediately,
     );
-    onDispose(() => controller.close());
 
     return controller.stream;
   }
@@ -32,15 +37,16 @@ extension CoreRefExtensions on Ref<dynamic> {
   Stream<T> streamOf<T>(
     AlwaysAliveProviderListenable<T> provider, {
     bool fireImmediately = false,
+    bool broadcast = false,
   }) {
-    final StreamController<T> controller = StreamController();
+    final StreamController<T> controller = broadcast ? StreamController.broadcast() : StreamController();
+    onDispose(() => controller.close());
 
     listen(
       provider,
       (_, next) => controller.add(next),
       fireImmediately: fireImmediately,
     );
-    onDispose(() => controller.close());
 
     return controller.stream;
   }
@@ -53,19 +59,24 @@ extension CoreAutoDisposeRefExtensions on AutoDisposeRef<dynamic> {
   Stream<T> streamOfAsyncData<T>(
     ProviderListenable<AsyncValue<T>> provider, {
     bool fireImmediately = false,
-    bool skipAsyncError = true,
+    bool skipError = true,
+    bool skipLoadingOnReload = false,
+    bool skipLoadingOnRefresh = true,
+    bool broadcast = false,
   }) {
-    final StreamController<T> controller = StreamController();
+    final StreamController<T> controller = broadcast ? StreamController.broadcast() : StreamController();
+    onDispose(() => controller.close());
 
     listen(
       provider,
       (_, next) => next.whenOrNull(
         data: (value) => controller.add(value),
-        error: (error, stackTrace) => skipAsyncError ? null : controller.addError(error, stackTrace),
+        error: (error, stackTrace) => skipError ? null : controller.addError(error, stackTrace),
+        skipLoadingOnRefresh: skipLoadingOnRefresh,
+        skipLoadingOnReload: skipLoadingOnReload,
       ),
       fireImmediately: fireImmediately,
     );
-    onDispose(() => controller.close());
 
     return controller.stream;
   }
@@ -76,15 +87,16 @@ extension CoreAutoDisposeRefExtensions on AutoDisposeRef<dynamic> {
   Stream<T> streamOf<T>(
     ProviderListenable<T> provider, {
     bool fireImmediately = false,
+    bool broadcast = false,
   }) {
-    final StreamController<T> controller = StreamController();
+    final StreamController<T> controller = broadcast ? StreamController.broadcast() : StreamController();
+    onDispose(() => controller.close());
 
     listen(
       provider,
       (_, next) => controller.add(next),
       fireImmediately: fireImmediately,
     );
-    onDispose(() => controller.close());
 
     return controller.stream;
   }

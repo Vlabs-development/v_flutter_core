@@ -27,6 +27,7 @@ export 'src/hooks/use_memoized_2.dart';
 export 'src/hooks/use_memoized_minutely.dart';
 export 'src/hooks/use_rebuild.dart';
 export 'src/hooks/use_scroll_notification_observer.dart';
+export 'src/hooks/use_throttle_callback.dart';
 export 'src/hooks/use_value_listener.dart';
 
 export 'src/theme/material/default_chip_theme_data.dart';

@@ -1,3 +1,8 @@
+## 0.0.7
+
+- feat: add `when` parameters to `streamOfAsyncData`, also broadcast flag
+- feat: `useThrottleCallback`
+
 ## 0.0.6
 
 - add refreshItem to LiveList
