@@ -113,7 +113,7 @@ class LiveList<ID, T> {
   T requireItem(ID id) => items.firstWhere((item) => resolveId(item) == id);
 
   void upsertItem(T externalItem) => _mergeItem(externalItem);
-  void removeItem(ID id) => _removeItemById(id);
+  T? removeItem(ID id) => _removeItemById(id);
 
   Future<Either<Object?, T>?> refreshItem(ID id) async {
     final _fetchItem = fetchItem;
@@ -362,7 +362,16 @@ class LiveList<ID, T> {
 
   void _replaceItems(Iterable<T> items) => _update((currentItems) => items);
 
-  void _removeItemById(ID id) => _update((currentItems) => [...currentItems]..removeWhere((it) => resolveId(it) == id));
+  T? _removeItemById(ID id) {
+    T? removedItem;
+    _update((currentItems) {
+      final newList = [...currentItems];
+      removedItem = newList.firstWhereOrNull((it) => resolveId(it) == id);
+      newList.removeWhere((it) => resolveId(it) == id);
+      return newList;
+    });
+    return removedItem;
+  }
 
   void _update(Iterable<T> Function(Iterable<T>) callback) {
     final currentItems = _subject.valueOrNull;
