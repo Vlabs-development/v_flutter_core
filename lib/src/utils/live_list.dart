@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:v_flutter_core/src/utils/disposable/disposable_list.dart';
@@ -104,6 +105,12 @@ class LiveList<ID, T> {
     _disposableMapGroup.dispose();
     _subject.close();
   }
+
+  T? getItem(ID id) => items.firstWhereOrNull((item) => resolveId(item) == id);
+  Stream<T> getItemStream(ID id) => stream
+      .map((items) => items.firstWhereOrNull((item) => resolveId(item) == id)) //
+      .whereType<T>();
+  T requireItem(ID id) => items.firstWhere((item) => resolveId(item) == id);
 
   void upsertItem(T externalItem) => _mergeItem(externalItem);
   void removeItem(ID id) => _removeItemById(id);
