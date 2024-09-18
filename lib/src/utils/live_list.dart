@@ -70,7 +70,8 @@ class LiveList<ID, T> {
     FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item)? getItemDependencyStreams,
     Future<T> Function(ID id)? fetchItem,
   })  : getItemDependencyStreams = getItemDependencyStreams ?? _empty,
-        fetchItem = fetchItem != null ? ReaderTaskEither<ID, Object?, T>.tryCatch((id) => fetchItem(id), (o, s) => o) : null {
+        fetchItem =
+            fetchItem != null ? ReaderTaskEither<ID, Object?, T>.tryCatch((id) => fetchItem(id), (o, s) => o) : null {
     if (getItemDependencyStreams != null && fetchItem == null) {
       throw ArgumentError(getDependencyStreamsRequiresGetItem);
     }
@@ -83,7 +84,7 @@ class LiveList<ID, T> {
     final liveUpdates = _subject.asMaterializedChangeStream(resolveId);
 
     _disposableList.addStreamSubscription(itemListStream.listen((items) => _replaceItems(items)));
-    _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => _mergeItem(item)));
+    _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => upsertItem(item)));
     _disposableList.addStreamSubscription(triggerPredicateReevaluation.listen((_) => _subject.add(items)));
     _disposableList.addStreamSubscription(_actualizeItemSubscriptions(liveUpdates));
     _disposableList.addStreamSubscription(_actualizeItemDependencySubscriptions(liveUpdates));
@@ -104,7 +105,7 @@ class LiveList<ID, T> {
     _subject.close();
   }
 
-  void addItem(T externalItem) => _mergeItem(externalItem);
+  void upsertItem(T externalItem) => _mergeItem(externalItem);
   void removeItem(ID id) => _removeItemById(id);
 
   Future<Either<Object?, T>?> refreshItem(ID id) async {
@@ -117,7 +118,7 @@ class LiveList<ID, T> {
     final item = await _fetchItem.run(id);
     item.match(
       (l) => null,
-      (updatedItem) => _mergeItem(updatedItem),
+      (updatedItem) => upsertItem(updatedItem),
     );
     return item;
   }
@@ -187,7 +188,7 @@ class LiveList<ID, T> {
               _deferredItemTriggerCounts[id] = (_deferredItemTriggerCounts[id] ?? 0) + 1;
               final deferredItem = await deferredItemFuture;
               if (_needsEmittingDeferredItem[id] ?? false) {
-                addItem(deferredItem);
+                upsertItem(deferredItem);
                 _needsEmittingDeferredItem.remove(id);
               }
               if (_deferredItemTriggerCounts[id]! > 1 && !(_hasReturnedIdAfterDeferred[id] ?? false)) {
@@ -232,7 +233,7 @@ class LiveList<ID, T> {
               (key, value) => _disposableMapGroup.addStreamSubscription(
                 key,
                 _itemUpdatedStreamKey,
-                value.listen((updatedItem) => _mergeItem(updatedItem)),
+                value.listen((updatedItem) => upsertItem(updatedItem)),
               ),
             );
       });
@@ -320,7 +321,7 @@ class LiveList<ID, T> {
           stream
               .exhaustMap((_) => Rx.fromCallable<T?>(() => fetchItem?.maybeRight(itemId)))
               .whereType<T>()
-              .listen((item) => addItem(item)),
+              .listen((item) => upsertItem(item)),
         );
       }
 
@@ -342,7 +343,7 @@ class LiveList<ID, T> {
         final updatedItem = await _fetchItem.run(resolveId(item));
         updatedItem.match(
           (l) {},
-          (updatedItem) => _mergeItem(updatedItem),
+          (updatedItem) => upsertItem(updatedItem),
         );
       }
     });

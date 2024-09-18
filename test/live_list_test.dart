@@ -619,7 +619,7 @@ void main() {
             ],
           );
 
-          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.addItem(b));
+          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.upsertItem(b));
 
           expect(
             liveList.stream,
@@ -754,7 +754,7 @@ void main() {
             fetchItem: (id) => getNext(id),
           );
 
-          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.addItem(b));
+          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.upsertItem(b));
 
           expect(
             liveList.stream,
@@ -1174,7 +1174,7 @@ void main() {
             ],
           );
 
-          Future<void>.delayed(100.milliseconds).then((value) => liveList.addItem(b));
+          Future<void>.delayed(100.milliseconds).then((value) => liveList.upsertItem(b));
 
           expect(
             liveList.stream,
@@ -1194,7 +1194,7 @@ void main() {
             ],
           );
 
-          Future<void>.delayed(100.milliseconds).then((value) => liveList.addItem(b));
+          Future<void>.delayed(100.milliseconds).then((value) => liveList.upsertItem(b));
 
           expect(
             liveList.stream,
