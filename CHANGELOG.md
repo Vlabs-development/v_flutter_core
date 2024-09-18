@@ -1,3 +1,7 @@
+## 0.0.9
+
+Revert "fix: remove unnecessary `AutoDisposeRef`"
+
 ## 0.0.8
 
 - fix: remove unnecessary `AutoDisposeRef`
