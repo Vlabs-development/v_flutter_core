@@ -8,12 +8,12 @@ import 'package:v_flutter_core/src/utils/disposable/disposable_list.dart';
 import 'package:v_flutter_core/src/utils/disposable/disposable_map_group.dart';
 import 'package:v_flutter_core/v_flutter_core.dart' hide CoreMapExtensions;
 
-const getDependencyStreamsRequiresGetItem = 'Must define getItem for getItemDependencyStreams to work.';
-const getItemIdUpdatedStreamRequiresGetItem = 'Must define getItem for getItemTriggerStream to work.';
+const getDependencyStreamsRequiresGetItem = 'Must define fetchItem for getItemDependencyStreams to work.';
+const getItemIdUpdatedStreamRequiresGetItem = 'Must define fetchItem for getItemTriggerStream to work.';
 const deferItemIdUpdateRequiresGetItemTriggerStream =
     'In order to make use of deferItemIdUpdate LiveList has to operate with getItemTriggerStream';
-const listDependenciesRequiresGetItem = 'Must define getItem for listDependency to work.';
-const unusedGetItem = 'getItem is unused if neither getItemTriggerStream nor getItemDependencyStreams are defined.';
+const listDependenciesRequiresFetchItem = 'Must define fetchItem for listDependency to work.';
+const unusedFetchItem = 'fetchItem is unused if neither getItemTriggerStream nor getItemDependencyStreams are defined.';
 
 typedef _ResolvableItemDependencyRecord<T> = (String? Function(T), TriggerStream Function(String));
 typedef _KeyResolvedItemDependencyMap = Map<String, TriggerStream Function(String)>;
@@ -45,7 +45,7 @@ class LiveList<ID, T> {
   final TriggerStream triggerPredicateReevaluation;
   final FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item) getItemDependencyStreams;
 
-  final ReaderTaskEither<ID, Object?, T>? getItem;
+  final ReaderTaskEither<ID, Object?, T>? fetchItem;
   final ID Function(T item) resolveId;
   final bool Function(T item) includePredicate;
   final bool Function(T item) listenPredicate;
@@ -68,17 +68,17 @@ class LiveList<ID, T> {
     this.listenPredicate = _alwaysTrue,
     this.listDependency = const [],
     FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item)? getItemDependencyStreams,
-    Future<T> Function(ID id)? getItem,
+    Future<T> Function(ID id)? fetchItem,
   })  : getItemDependencyStreams = getItemDependencyStreams ?? _empty,
-        getItem = getItem != null ? ReaderTaskEither<ID, Object?, T>.tryCatch((id) => getItem(id), (o, s) => o) : null {
-    if (getItemDependencyStreams != null && getItem == null) {
+        fetchItem = fetchItem != null ? ReaderTaskEither<ID, Object?, T>.tryCatch((id) => fetchItem(id), (o, s) => o) : null {
+    if (getItemDependencyStreams != null && fetchItem == null) {
       throw ArgumentError(getDependencyStreamsRequiresGetItem);
     }
-    if (getItemTriggerStream != null && getItem == null) {
+    if (getItemTriggerStream != null && fetchItem == null) {
       throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
     }
-    if (listDependency.isNotEmpty && getItem == null) {
-      throw ArgumentError(listDependenciesRequiresGetItem);
+    if (listDependency.isNotEmpty && fetchItem == null) {
+      throw ArgumentError(listDependenciesRequiresFetchItem);
     }
     final liveUpdates = _subject.asMaterializedChangeStream(resolveId);
 
@@ -108,13 +108,13 @@ class LiveList<ID, T> {
   void removeItem(ID id) => _removeItemById(id);
 
   Future<Either<Object?, T>?> refreshItem(ID id) async {
-    final _getItem = getItem;
+    final _fetchItem = fetchItem;
 
-    if (_getItem == null) {
-      return const Left('getItem is not defined');
+    if (_fetchItem == null) {
+      return const Left('fetchItem is not defined');
     }
 
-    final item = await _getItem.run(id);
+    final item = await _fetchItem.run(id);
     item.match(
       (l) => null,
       (updatedItem) => _mergeItem(updatedItem),
@@ -124,7 +124,7 @@ class LiveList<ID, T> {
 
   /// The returned [HandshakeCompleter] gives a handle to control the case when an async action that returns a [T] is in progress
   /// (which should be represented by the [HandshakeCompleter] future) and meanwhile there is either an itemTriggerStream or a
-  /// itemDependencyStream event occuring. For such cases the event is not directly mapped to a [getItem] call
+  /// itemDependencyStream event occuring. For such cases the event is not directly mapped to a [fetchItem] call
   ///
   HandshakeCompleter<T> deferItemTrigger(ID id) {
     if (getItemTriggerStream == null) {
@@ -152,21 +152,21 @@ class LiveList<ID, T> {
   Stream<T> _getItemUpdatedStream(T item) => getItemUpdatedStream?.call(resolveId(item)) ?? Stream<T>.empty();
 
   Stream<T> _getDeferredItemTriggerdStream(T item) {
-    final _getItem = getItem;
+    final _fetchItem = fetchItem;
     final _getItemTriggerStream = getItemTriggerStream;
 
     if (_getItemTriggerStream == null) {
       return const Stream.empty();
     }
 
-    if (_getItem == null) {
+    if (_fetchItem == null) {
       throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
     }
 
     final id = resolveId(item);
     final itemTriggerStream = _getItemTriggerStream(id);
     final deferredItemTriggerStream = _awaitItemWhenDeferred(itemTriggerStream.map((_) => id));
-    return deferredItemTriggerStream.asyncMap((id) => _getItem.maybeRight(id)).whereType<T>();
+    return deferredItemTriggerStream.asyncMap((id) => _fetchItem.maybeRight(id)).whereType<T>();
   }
 
   Stream<ID> _awaitItemWhenDeferred(Stream<ID> stream) {
@@ -318,7 +318,7 @@ class LiveList<ID, T> {
           itemId,
           '${_itemDependencyStreamKey}_$key',
           stream
-              .exhaustMap((_) => Rx.fromCallable<T?>(() => getItem?.maybeRight(itemId)))
+              .exhaustMap((_) => Rx.fromCallable<T?>(() => fetchItem?.maybeRight(itemId)))
               .whereType<T>()
               .listen((item) => addItem(item)),
         );
@@ -332,14 +332,14 @@ class LiveList<ID, T> {
 
   StreamSubscription<void> _listDependencySubscription(ListDependency<T> dependency) {
     return dependency.triggerStream.listen((_) async {
-      final _getItem = getItem;
-      if (_getItem == null) {
+      final _fetchItem = fetchItem;
+      if (_fetchItem == null) {
         throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
       }
 
       final needsUpdate = items.where((item) => dependency.itemPredicate(item));
       for (final item in needsUpdate) {
-        final updatedItem = await _getItem.run(resolveId(item));
+        final updatedItem = await _fetchItem.run(resolveId(item));
         updatedItem.match(
           (l) {},
           (updatedItem) => _mergeItem(updatedItem),

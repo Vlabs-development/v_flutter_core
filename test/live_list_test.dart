@@ -93,7 +93,7 @@ LiveList<String, _Model> aLiveList({
   List<ItemEvent>? creates,
   FutureOr<List<(String? Function(_Model), TriggerStream Function(String))>> Function(_Model item)?
       getItemDependencyStreams,
-  FutureOr<_Model> Function(String id)? getItem,
+  FutureOr<_Model> Function(String id)? fetchItem,
   Duration? disposeAfter = testLiveListsAreDisposedAfter,
   List<(String? Function(_Model item), List<(String, TriggerEvent)>)>? dependencyUpdates,
 }) {
@@ -166,7 +166,7 @@ LiveList<String, _Model> aLiveList({
     resolveId: resolveId,
     listenPredicate: listenPredicate,
     includePredicate: includePredicate,
-    getItem: getItem != null ? (String id) => Future.sync(() => getItem(id)) : null,
+    fetchItem: fetchItem != null ? (String id) => Future.sync(() => fetchItem(id)) : null,
     getItemDependencyStreams: effectiveGetItemDependencyStream,
   );
   if (disposeAfter != null) {
@@ -393,7 +393,7 @@ void main() {
                     (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
                   ),
                 ],
-                getItem: (id) => a,
+                fetchItem: (id) => a,
               );
 
               await expectLater(
@@ -431,7 +431,7 @@ void main() {
                     (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
                   ),
                 ],
-                getItem: (id) => a,
+                fetchItem: (id) => a,
               );
 
               await expectLater(
@@ -460,7 +460,7 @@ void main() {
                   (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
                 ),
               ],
-              getItem: (id) => a,
+              fetchItem: (id) => a,
               listenPredicate: (item) => item.id != a.id,
             );
 
@@ -653,7 +653,7 @@ void main() {
                 ItemTriggerEvent.after(300.milliseconds, id: a.id),
                 ItemTriggerEvent.after(400.milliseconds, id: b.id),
               ],
-              getItem: (id) => getNext(id),
+              fetchItem: (id) => getNext(id),
             ).stream,
             emitsInOrder([
               [a, b],
@@ -685,7 +685,7 @@ void main() {
                 ItemTriggerEvent.after(300.milliseconds, id: b.id),
                 ItemTriggerEvent.after(400.milliseconds, id: a.id),
               ],
-              getItem: (id) => getNext(id),
+              fetchItem: (id) => getNext(id),
             ).stream,
             emitsInOrder([
               [a, b],
@@ -723,7 +723,7 @@ void main() {
               creates: [
                 ItemEvent.after(300.milliseconds, c),
               ],
-              getItem: (id) => getNext(id),
+              fetchItem: (id) => getNext(id),
             ).stream,
             emitsInOrder([
               [a, b],
@@ -751,7 +751,7 @@ void main() {
               ItemTriggerEvent.after(100.milliseconds, id: b.id),
               ItemTriggerEvent.after(200.milliseconds, id: b.id),
             ],
-            getItem: (id) => getNext(id),
+            fetchItem: (id) => getNext(id),
           );
 
           Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.addItem(b));
@@ -778,7 +778,7 @@ void main() {
               itemTriggers: [
                 ItemTriggerEvent.after(100.milliseconds, id: a.id),
               ],
-              getItem: (id) => getA.next(),
+              fetchItem: (id) => getA.next(),
             );
 
             final completer = liveList.deferItemTrigger(a.id);
@@ -804,7 +804,7 @@ void main() {
                 ItemTriggerEvent.after(100.milliseconds, id: a.id),
                 ItemTriggerEvent.after(200.milliseconds, id: a.id),
               ],
-              getItem: (id) => getA.next(),
+              fetchItem: (id) => getA.next(),
             );
 
             final completer = liveList.deferItemTrigger(a.id);
@@ -829,7 +829,7 @@ void main() {
               itemTriggers: [
                 ItemTriggerEvent.after(20.milliseconds, id: a.id),
               ],
-              getItem: (id) => getA.next(),
+              fetchItem: (id) => getA.next(),
             );
 
             final completer = liveList.deferItemTrigger(a.id);
@@ -845,7 +845,7 @@ void main() {
             expect(liveList.stream, neverEmits([aa]));
           });
 
-          test('calls getItem once when multiple updates fired while deferring', () {
+          test('calls fetchItem once when multiple updates fired while deferring', () {
             final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
 
             final liveList = aLiveList(
@@ -861,7 +861,7 @@ void main() {
                 ItemTriggerEvent.after(120.milliseconds, id: a.id),
                 ItemTriggerEvent.after(140.milliseconds, id: a.id),
               ],
-              getItem: (id) {
+              fetchItem: (id) {
                 return getA.next();
               },
             );
@@ -890,7 +890,7 @@ void main() {
               itemTriggers: [
                 ItemTriggerEvent.after(50.milliseconds, id: a.id),
               ],
-              getItem: (id) => getA.next(),
+              fetchItem: (id) => getA.next(),
             );
 
             final completer = liveList.deferItemTrigger(a.id);
@@ -1064,7 +1064,7 @@ void main() {
                   [('1', TriggerEvent.after(50.milliseconds))],
                 ),
               ],
-              getItem: (id) => aaaa,
+              fetchItem: (id) => aaaa,
               listenPredicate: (item) => item.id != a.id,
             ).stream,
             neverEmits([aaaa, b]),
@@ -1271,7 +1271,7 @@ void main() {
                 (foreignId) => foreignId == '1' ? streamObserver.stream : const Stream.empty(),
               ),
             ],
-            getItem: (id) => aa,
+            fetchItem: (id) => aa,
           );
 
           Future<void>.delayed(const Duration(milliseconds: 100)).then((value) => liveList.removeItem('a'));
@@ -1291,7 +1291,7 @@ void main() {
       });
 
       group('getItemDependencyStreams', () {
-        test('should throw when getItem is not specified', () {
+        test('should throw when fetchItem is not specified', () {
           expect(
             () => aLiveList(
               getItemDependencyStreams: (item) => [],
@@ -1299,11 +1299,11 @@ void main() {
             throwsA(isA<ArgumentError>()),
           );
         });
-        test('should not throw when getItem is also specified', () {
+        test('should not throw when fetchItem is also specified', () {
           expect(
             () => aLiveList(
               getItemDependencyStreams: (item) => [],
-              getItem: (id) => Future.value(a),
+              fetchItem: (id) => Future.value(a),
             ),
             returnsNormally,
           );
@@ -1321,7 +1321,7 @@ void main() {
                   [('2', TriggerEvent.after(100.milliseconds))],
                 ),
               ],
-              getItem: (id) => aaa,
+              fetchItem: (id) => aaa,
             );
 
             expect(
@@ -1351,7 +1351,7 @@ void main() {
                   [('3', TriggerEvent())],
                 ),
               ],
-              getItem: (id) => a,
+              fetchItem: (id) => a,
             );
 
             expect(
@@ -1369,7 +1369,7 @@ void main() {
         test(
           'triggering stream should work if item matches predicate after item update triggered by dependency',
           () async {
-            final getItem = SequenceReturn<_Model Function(String)>(returnValues: [(_) => aa, (_) => aaaa]);
+            final fetchItem = SequenceReturn<_Model Function(String)>(returnValues: [(_) => aa, (_) => aaaa]);
 
             final liveList = aLiveList(
               items: [
@@ -1384,7 +1384,7 @@ void main() {
                   ],
                 ),
               ],
-              getItem: (id) => getItem.next()(id),
+              fetchItem: (id) => fetchItem.next()(id),
             );
 
             expect(
@@ -1399,7 +1399,7 @@ void main() {
         );
       });
       // group('updateDelegates', () {
-      //   test('should throw when neither getItemTriggerStream nor getItem are not specified', () {
+      //   test('should throw when neither getItemTriggerStream nor fetchItem are not specified', () {
       //     final liveList = aLiveList();
 
       //     expect(
@@ -1408,16 +1408,16 @@ void main() {
       //     );
       //   });
       //   test('should throw when getItemTriggerStream is not specified', () {
-      //     final liveList = aLiveList(getItem: (_) => a);
+      //     final liveList = aLiveList(fetchItem: (_) => a);
 
       //     expect(
       //       () => liveList.deferItemTrigger('a'),
       //       throwsA(isA<ArgumentError>()),
       //     );
       //   });
-      //   test('should not throw when both getItemTriggerStream getItem are specified', () {
+      //   test('should not throw when both getItemTriggerStream fetchItem are specified', () {
       //     final liveList = aLiveList(
-      //       getItem: (id) => a,
+      //       fetchItem: (id) => a,
       //       getItemTriggerStream: (_) => const Stream.empty(),
       //     );
 
@@ -1432,7 +1432,7 @@ void main() {
       //         ItemListEvent([a, b]),
       //         // ItemListEvent.after(50.milliseconds, [aa, b]),
       //       ],
-      //       getItem: (id) => aaa,
+      //       fetchItem: (id) => aaa,
       //       getItemTriggerStream: (_) => const Stream.empty(),
       //     );
 
