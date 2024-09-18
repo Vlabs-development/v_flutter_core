@@ -86,7 +86,13 @@ class LiveList<ID, T> {
 
     _disposableList.addStreamSubscription(itemListStream.listen((items) => _replaceItems(items)));
     _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => upsertItem(item)));
-    _disposableList.addStreamSubscription(triggerPredicateReevaluation.listen((_) => _subject.add(items)));
+    _disposableList.addStreamSubscription(
+      triggerPredicateReevaluation.listen((_) {
+        if (_subject.hasValue) {
+          _subject.add(items);
+        }
+      }),
+    );
     _disposableList.addStreamSubscription(_actualizeItemSubscriptions(liveUpdates));
     _disposableList.addStreamSubscription(_actualizeItemDependencySubscriptions(liveUpdates));
     _disposableList.addAllStreamSubscription(listDependencies.map((d) => _listDependencySubscription(d)));
@@ -104,7 +110,8 @@ class LiveList<ID, T> {
   }
 
   Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
-  Iterable<T> get items => _subject.value;
+  Iterable<T> get items => _subject.valueOrNull ?? [];
+
   T? getItem(ID id) => items.firstWhereOrNull((item) => resolveId(item) == id);
   Stream<T> getItemStream(ID id) => stream
       .map((items) => items.firstWhereOrNull((item) => resolveId(item) == id)) //
