@@ -9,7 +9,7 @@ import 'package:v_flutter_core/src/utils/disposable/disposable_map_group.dart';
 import 'package:v_flutter_core/v_flutter_core.dart' hide CoreMapExtensions;
 
 const getDependencyStreamsRequiresGetItem = 'Must define fetchItem for getItemDependencyStreams to work.';
-const getItemIdUpdatedStreamRequiresGetItem = 'Must define fetchItem for getItemTriggerStream to work.';
+const getItemTriggerStreamRequiresGetItem = 'Must define fetchItem for getItemTriggerStream to work.';
 const deferItemIdUpdateRequiresGetItemTriggerStream =
     'In order to make use of deferItemIdUpdate LiveList has to operate with getItemTriggerStream';
 const listDependenciesRequiresFetchItem = 'Must define fetchItem for listDependency to work.';
@@ -75,7 +75,7 @@ class LiveList<ID, T> {
       throw ArgumentError(getDependencyStreamsRequiresGetItem);
     }
     if (getItemTriggerStream != null && fetchItem == null) {
-      throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
+      throw ArgumentError(getItemTriggerStreamRequiresGetItem);
     }
     if (listDependency.isNotEmpty && fetchItem == null) {
       throw ArgumentError(listDependenciesRequiresFetchItem);
@@ -160,7 +160,7 @@ class LiveList<ID, T> {
     }
 
     if (_fetchItem == null) {
-      throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
+      throw ArgumentError(getItemTriggerStreamRequiresGetItem);
     }
 
     final id = resolveId(item);
@@ -334,7 +334,7 @@ class LiveList<ID, T> {
     return dependency.triggerStream.listen((_) async {
       final _fetchItem = fetchItem;
       if (_fetchItem == null) {
-        throw ArgumentError(getItemIdUpdatedStreamRequiresGetItem);
+        throw ArgumentError(getItemTriggerStreamRequiresGetItem);
       }
 
       final needsUpdate = items.where((item) => dependency.itemPredicate(item));
