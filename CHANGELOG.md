@@ -1,5 +1,10 @@
+## 0.0.9
+
+Revert "fix: remove unnecessary `AutoDisposeRef`"
+
 ## 0.0.8
 
+- fix: remove unnecessary `AutoDisposeRef`
 - fix: order
 - fix: make `removeItem` return the removed `T?` item
 - feat: add some util functions: `getItem`, `requireItem`, `getItemStream`
