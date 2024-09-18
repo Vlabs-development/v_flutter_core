@@ -1,3 +1,14 @@
+## 0.0.8
+
+- fix: order
+- fix: make `removeItem` return the removed `T?` item
+- feat: add some util functions: `getItem`, `requireItem`, `getItemStream`
+- fix: rename `addItem` -> `upsertItem` & use `upserItem` instead of `_mergeItem`
+- fix: rename `listDependency` -> `listDependencies`
+- fix: rename of remaining `getItemIdUpdated` -> `getItemTrigger`
+- fix: rename `getItem` -> `fetchItem`
+- feat: add `triggerPredicateReevaluation`
+
 ## 0.0.7
 
 - feat: add `when` parameters to `streamOfAsyncData`, also broadcast flag
