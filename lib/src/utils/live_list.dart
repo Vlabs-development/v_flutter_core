@@ -55,7 +55,7 @@ class LiveList<ID, T> {
   final Map<ID, int> _deferredItemTriggerCounts = {};
   final Map<ID, bool> _hasReturnedIdAfterDeferred = {};
 
-  final List<ListDependency<T>> listDependency;
+  final List<ListDependency<T>> listDependencies;
 
   LiveList({
     required this.resolveId,
@@ -66,7 +66,7 @@ class LiveList<ID, T> {
     this.itemCreatedStream = const Stream.empty(),
     this.includePredicate = _alwaysTrue,
     this.listenPredicate = _alwaysTrue,
-    this.listDependency = const [],
+    this.listDependencies = const [],
     FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item)? getItemDependencyStreams,
     Future<T> Function(ID id)? fetchItem,
   })  : getItemDependencyStreams = getItemDependencyStreams ?? _empty,
@@ -77,7 +77,7 @@ class LiveList<ID, T> {
     if (getItemTriggerStream != null && fetchItem == null) {
       throw ArgumentError(getItemTriggerStreamRequiresGetItem);
     }
-    if (listDependency.isNotEmpty && fetchItem == null) {
+    if (listDependencies.isNotEmpty && fetchItem == null) {
       throw ArgumentError(listDependenciesRequiresFetchItem);
     }
     final liveUpdates = _subject.asMaterializedChangeStream(resolveId);
@@ -87,7 +87,7 @@ class LiveList<ID, T> {
     _disposableList.addStreamSubscription(triggerPredicateReevaluation.listen((_) => _subject.add(items)));
     _disposableList.addStreamSubscription(_actualizeItemSubscriptions(liveUpdates));
     _disposableList.addStreamSubscription(_actualizeItemDependencySubscriptions(liveUpdates));
-    _disposableList.addAllStreamSubscription(listDependency.map((d) => _listDependencySubscription(d)));
+    _disposableList.addAllStreamSubscription(listDependencies.map((d) => _listDependencySubscription(d)));
   }
 
   final _subject = BehaviorSubject<Iterable<T>>();
