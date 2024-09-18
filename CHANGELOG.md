@@ -1,3 +1,7 @@
+## 0.0.10
+
+fix: do not access BehaviorSubject value prematurely
+
 ## 0.0.9
 
 Revert "fix: remove unnecessary `AutoDisposeRef`"
