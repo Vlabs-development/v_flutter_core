@@ -93,9 +93,6 @@ class LiveList<ID, T> {
   }
 
   final _subject = BehaviorSubject<Iterable<T>>();
-  Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
-  Iterable<T> get items => _subject.value;
-
   final _disposableList = DisposableList();
   final _disposableMapGroup = DisposableMapGroup<ID, String>();
   final _dependencyStreams = <ID, Map<String, Stream<String>>>{};
@@ -106,6 +103,8 @@ class LiveList<ID, T> {
     _subject.close();
   }
 
+  Stream<List<T>> get stream => _subject.stream.map((event) => event.where(includePredicate).toList());
+  Iterable<T> get items => _subject.value;
   T? getItem(ID id) => items.firstWhereOrNull((item) => resolveId(item) == id);
   Stream<T> getItemStream(ID id) => stream
       .map((items) => items.firstWhereOrNull((item) => resolveId(item) == id)) //
