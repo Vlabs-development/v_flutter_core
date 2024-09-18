@@ -42,6 +42,7 @@ class LiveList<ID, T> {
   final ItemStream<T> itemCreatedStream;
   final ItemStream<T> Function(ID id)? getItemUpdatedStream;
   final TriggerStream Function(ID id)? getItemTriggerStream;
+  final TriggerStream triggerPredicateReevaluation;
   final FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item) getItemDependencyStreams;
 
   final ReaderTaskEither<ID, Object?, T>? getItem;
@@ -61,6 +62,7 @@ class LiveList<ID, T> {
     required this.itemListStream,
     this.getItemUpdatedStream,
     this.getItemTriggerStream,
+    this.triggerPredicateReevaluation = const Stream.empty(),
     this.itemCreatedStream = const Stream.empty(),
     this.includePredicate = _alwaysTrue,
     this.listenPredicate = _alwaysTrue,
@@ -82,6 +84,7 @@ class LiveList<ID, T> {
 
     _disposableList.addStreamSubscription(itemListStream.listen((items) => _replaceItems(items)));
     _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => _mergeItem(item)));
+    _disposableList.addStreamSubscription(triggerPredicateReevaluation.listen((_) => _subject.add(items)));
     _disposableList.addStreamSubscription(_actualizeItemSubscriptions(liveUpdates));
     _disposableList.addStreamSubscription(_actualizeItemDependencySubscriptions(liveUpdates));
     _disposableList.addAllStreamSubscription(listDependency.map((d) => _listDependencySubscription(d)));
