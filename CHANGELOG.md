@@ -1,3 +1,7 @@
+## 0.0.11
+
+fix: properly clean up `ProviderSubscription` when the `streamOfAsyncData`/`streamOf` streams are cancelled
+
 ## 0.0.10
 
 fix: do not access BehaviorSubject value prematurely
