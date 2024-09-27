@@ -29,8 +29,8 @@ class SeparatedColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> paddedChildren =
-        children.map((child) => childPadding == null ? child : Padding(padding: childPadding!, child: child)).toList();
+    final paddedChildren =
+        children.map((child) => childPadding == null ? child : Padding(padding: childPadding!, child: child));
 
     return Column(
       mainAxisAlignment: mainAxisAlignment,
