@@ -13,6 +13,7 @@ class SeparatedRow extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.clipBehavior = Clip.none,
+    this.childPadding,
   });
 
   final List<Widget> children;
@@ -24,9 +25,13 @@ class SeparatedRow extends StatelessWidget {
   final VerticalDirection verticalDirection;
   final TextBaseline? textBaseline;
   final Clip clipBehavior;
+  final EdgeInsetsGeometry? childPadding;
 
   @override
   Widget build(BuildContext context) {
+    final paddedChildren =
+        children.map((child) => childPadding == null ? child : Padding(padding: childPadding!, child: child));
+
     return Row(
       mainAxisAlignment: mainAxisAlignment,
       mainAxisSize: mainAxisSize,
@@ -34,7 +39,7 @@ class SeparatedRow extends StatelessWidget {
       textDirection: textDirection,
       verticalDirection: verticalDirection,
       textBaseline: textBaseline,
-      children: children.putBetween(separator),
+      children: paddedChildren.putBetween(separator),
     );
   }
 }

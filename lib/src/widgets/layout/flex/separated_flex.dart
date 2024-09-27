@@ -3,6 +3,7 @@ import 'package:v_flutter_core/v_flutter_core.dart';
 
 class SeparatedFlex extends StatelessWidget {
   const SeparatedFlex({
+    super.key,
     required this.children,
     required this.direction,
     required this.separator,
@@ -13,7 +14,7 @@ class SeparatedFlex extends StatelessWidget {
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
     this.clipBehavior = Clip.none,
-    super.key,
+    this.childPadding,
   });
 
   final List<Widget> children;
@@ -26,9 +27,13 @@ class SeparatedFlex extends StatelessWidget {
   final VerticalDirection verticalDirection;
   final TextBaseline? textBaseline;
   final Clip clipBehavior;
+  final EdgeInsetsGeometry? childPadding;
 
   @override
   Widget build(BuildContext context) {
+    final paddedChildren =
+        children.map((child) => childPadding == null ? child : Padding(padding: childPadding!, child: child));
+
     return Flex(
       direction: direction,
       mainAxisAlignment: mainAxisAlignment,
@@ -38,7 +43,7 @@ class SeparatedFlex extends StatelessWidget {
       verticalDirection: verticalDirection,
       textBaseline: textBaseline,
       clipBehavior: clipBehavior,
-      children: children.putBetween(separator),
+      children: paddedChildren.putBetween(separator),
     );
   }
 }
