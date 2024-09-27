@@ -1,3 +1,7 @@
+## 0.0.12
+
+feat: add `childPadding` property to the `SeparatedColumn`, `SeparatedFlex` and `SeparatedRow` widgets
+
 ## 0.0.11
 
 fix: properly clean up `ProviderSubscription` when the `streamOfAsyncData`/`streamOf` streams are cancelled
