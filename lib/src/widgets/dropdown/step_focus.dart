@@ -25,11 +25,10 @@ class StepFocus extends StatelessWidget {
           HookBuilder(
             builder: (context) {
               final focusNode = useFocusNode();
-              final checkIsMounted = useIsMounted();
 
               usePlainPostFrameEffectOnce(() async {
                 await Future<void>.delayed(const Duration(milliseconds: 50));
-                if (!checkIsMounted()) {
+                if (!context.mounted) {
                   return;
                 }
                 focusNode.nextFocus();
