@@ -117,12 +117,12 @@ class ProgressButton extends HookWidget {
   final FocusNode? focusNode;
   final bool autofocus;
   final bool circular;
-  final MaterialStatesController? statesController;
+  final WidgetStatesController? statesController;
 
   @override
   Widget build(BuildContext context) {
     final effectiveStatesController = useMemoized(
-      () => statesController ?? MaterialStatesController(),
+      () => statesController ?? WidgetStatesController(),
       [statesController],
     );
     final ButtonStyle? themeStyle = variant.themeStyleOf(context);
@@ -135,7 +135,7 @@ class ProgressButton extends HookWidget {
       return widgetValue ?? themeValue ?? defaultValue;
     }
 
-    T? resolvePure<T>(MaterialStateProperty<T>? Function(ButtonStyle? style) getProperty) {
+    T? resolvePure<T>(WidgetStateProperty<T>? Function(ButtonStyle? style) getProperty) {
       return pureValue((ButtonStyle? style) => getProperty(style)?.resolve(effectiveStatesController.value));
     }
 
@@ -144,32 +144,32 @@ class ProgressButton extends HookWidget {
     final effectiveWidgetStyle = useMemoized(
       () {
         final side = (isLoading && isCircular)
-            ? const MaterialStatePropertyAll(BorderSide(color: Colors.transparent, width: 0))
+            ? const WidgetStatePropertyAll(BorderSide(color: Colors.transparent, width: 0))
             : null;
 
         final defaultStyle = (style ?? const ButtonStyle()).copyWith(
           // https://github.com/flutter/flutter/issues/123528
           visualDensity: VisualDensity.standard,
           enableFeedback: !isLoading,
-          overlayColor: isLoading ? const MaterialStatePropertyAll(Colors.transparent) : null,
-          mouseCursor: isLoading ? const MaterialStatePropertyAll(SystemMouseCursors.basic) : null,
+          overlayColor: isLoading ? const WidgetStatePropertyAll(Colors.transparent) : null,
+          mouseCursor: isLoading ? const WidgetStatePropertyAll(SystemMouseCursors.basic) : null,
           side: side,
           elevation: isLoading
               // This is not the style's default elevation, but 1 hardcoded
-              ? MaterialStateProperty.resolveWith((state) => state.contains(MaterialState.hovered) ? 1 : null)
+              ? WidgetStateProperty.resolveWith((state) => state.contains(WidgetState.hovered) ? 1 : null)
               : null,
         );
 
         if (isCircular) {
           if (isLoading) {
             return defaultStyle.copyWith(
-              padding: const MaterialStatePropertyAll(EdgeInsets.zero),
-              shape: const MaterialStatePropertyAll(CircleBorder()),
+              padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+              shape: const WidgetStatePropertyAll(CircleBorder()),
             );
           } else {
             return defaultStyle.copyWith(
-              shape: const MaterialStatePropertyAll(CircleBorder()),
-              padding: MaterialStatePropertyAll(resolvePure((style) => style?.padding)?.chiselCircular),
+              shape: const WidgetStatePropertyAll(CircleBorder()),
+              padding: WidgetStatePropertyAll(resolvePure((style) => style?.padding)?.chiselCircular),
             );
           }
         }
@@ -185,7 +185,7 @@ class ProgressButton extends HookWidget {
       return widgetValue ?? themeValue ?? defaultValue;
     }
 
-    T? resolveEffective<T>(MaterialStateProperty<T>? Function(ButtonStyle? style) getProperty) {
+    T? resolveEffective<T>(WidgetStateProperty<T>? Function(ButtonStyle? style) getProperty) {
       return effectiveValue((ButtonStyle? style) => getProperty(style)?.resolve(effectiveStatesController.value));
     }
 
@@ -248,9 +248,9 @@ class ProgressButtonIndicator extends StatelessWidget {
 
   final double strokeWidth;
   final Widget child;
-  final MaterialStatesController statesController;
+  final WidgetStatesController statesController;
   final bool circular;
-  final T? Function<T>(MaterialStateProperty<T>? Function(ButtonStyle?) getProperty) resolve;
+  final T? Function<T>(WidgetStateProperty<T>? Function(ButtonStyle?) getProperty) resolve;
 
   @override
   Widget build(BuildContext context) {
