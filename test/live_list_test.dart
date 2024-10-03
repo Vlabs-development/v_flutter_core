@@ -1484,7 +1484,3 @@ class _Model {
     return id.hashCode ^ name.hashCode ^ foreignId.hashCode;
   }
 }
-
-extension _DurationX on Duration {
-  Stream<void> get asStream => Stream<void>.fromFuture(Future.delayed(this));
-}
