@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
-import 'package:v_flutter_core/src/theme/mergeable_theme_extension/interweave_mergeable_theme_extension.dart';
+import 'package:v_flutter_core/src/theme/mergeable_theme_extension/interweave_theme_extension.dart';
 import 'package:v_flutter_core/src/widgets/reactive_text_field/reactive_text_field_style.dart';
 import 'package:v_flutter_core/src/widgets/reactive_text_field/reactive_text_field_theme.dart';
 import 'package:v_flutter_core/src/widgets/reactive_text_field/utils.dart';

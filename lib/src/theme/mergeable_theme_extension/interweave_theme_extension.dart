@@ -8,7 +8,7 @@ enum ThemeInterweaveStrategy {
 }
 
 extension ThemeDataExtensions on ThemeData {
-  ThemeData copyWithInterweavedThemeExtension<T extends MergeableThemeExtension<T>>(
+  ThemeData copyWithInterweavedThemeExtension<T extends ThemeExtension<T>>(
     T theme, {
     ThemeInterweaveStrategy strategy = ThemeInterweaveStrategy.merge,
   }) {
@@ -39,15 +39,15 @@ extension ThemeDataExtensions on ThemeData {
     return copyWith(extensions: result.values);
   }
 
-  ThemeData mergeThemeExtension<T extends MergeableThemeExtension<T>>(T theme) {
+  ThemeData mergeThemeExtension<T extends ThemeExtension<T>>(T theme) {
     return copyWithInterweavedThemeExtension(theme);
   }
 
-  ThemeData applyThemeExtension<T extends MergeableThemeExtension<T>>(T theme) {
+  ThemeData applyThemeExtension<T extends ThemeExtension<T>>(T theme) {
     return copyWithInterweavedThemeExtension(theme, strategy: ThemeInterweaveStrategy.apply);
   }
 
-  ThemeData overrideThemeExtension<T extends MergeableThemeExtension<T>>(T theme) {
+  ThemeData overrideThemeExtension<T extends ThemeExtension<T>>(T theme) {
     return copyWithInterweavedThemeExtension(theme, strategy: ThemeInterweaveStrategy.override);
   }
 
@@ -58,7 +58,7 @@ extension ThemeDataExtensions on ThemeData {
   }
 }
 
-class OverrideThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class OverrideThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const OverrideThemeExtension({
     required this.child,
     required this.theme,
@@ -75,7 +75,7 @@ class OverrideThemeExtension<T extends MergeableThemeExtension<T>> extends State
       );
 }
 
-class MergeThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class MergeThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const MergeThemeExtension({
     required this.child,
     required this.theme,
@@ -92,7 +92,7 @@ class MergeThemeExtension<T extends MergeableThemeExtension<T>> extends Stateles
       );
 }
 
-class ApplyThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class ApplyThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const ApplyThemeExtension({
     required this.child,
     required this.theme,
@@ -109,7 +109,7 @@ class ApplyThemeExtension<T extends MergeableThemeExtension<T>> extends Stateles
       );
 }
 
-class AnimatedMergeThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class AnimatedMergeThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const AnimatedMergeThemeExtension({
     required this.child,
     required this.theme,
@@ -133,7 +133,7 @@ class AnimatedMergeThemeExtension<T extends MergeableThemeExtension<T>> extends 
       );
 }
 
-class AnimatedApplyThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class AnimatedApplyThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const AnimatedApplyThemeExtension({
     required this.child,
     required this.theme,
@@ -157,7 +157,7 @@ class AnimatedApplyThemeExtension<T extends MergeableThemeExtension<T>> extends 
       );
 }
 
-class AnimatedOverrideThemeExtension<T extends MergeableThemeExtension<T>> extends StatelessWidget {
+class AnimatedOverrideThemeExtension<T extends ThemeExtension<T>> extends StatelessWidget {
   const AnimatedOverrideThemeExtension({
     required this.child,
     required this.theme,

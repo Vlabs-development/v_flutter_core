@@ -31,7 +31,7 @@ export 'src/hooks/use_throttle_callback.dart';
 export 'src/hooks/use_value_listener.dart';
 
 export 'src/theme/material/default_chip_theme_data.dart';
-export 'src/theme/mergeable_theme_extension/interweave_mergeable_theme_extension.dart';
+export 'src/theme/mergeable_theme_extension/interweave_theme_extension.dart';
 export 'src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 
 export 'src/utils/composite_node/composite_node.dart';

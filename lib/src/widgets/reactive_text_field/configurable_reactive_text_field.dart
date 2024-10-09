@@ -364,8 +364,8 @@ class ConfigurableReactiveTextField<T> extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = requireMergeableTheme(context: context, propTheme: propTheme);
-    final behavior = requireMergeableTheme(context: context, propTheme: propBehavior);
+    final theme = requireTheme(context: context, propTheme: propTheme);
+    final behavior = requireTheme(context: context, propTheme: propBehavior);
 
     return OverrideThemeExtension(
       theme: theme,

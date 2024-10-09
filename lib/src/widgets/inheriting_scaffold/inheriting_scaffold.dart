@@ -84,7 +84,7 @@ class InheritingScaffold extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return OverrideThemeExtension(
-      theme: requireMergeableTheme(context: context, propTheme: propBehavior),
+      theme: requireTheme(context: context, propTheme: propBehavior),
       child: const DelegatingScaffold(),
     );
   }

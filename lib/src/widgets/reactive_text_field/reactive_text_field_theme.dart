@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:v_flutter_core/src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 import 'package:v_flutter_core/src/widgets/reactive_text_field/reactive_text_field_style.dart';
 
-class ReactiveTextFieldTheme extends MergeableThemeExtension<ReactiveTextFieldTheme> {
+class ReactiveTextFieldTheme extends ThemeExtension<ReactiveTextFieldTheme> {
   ReactiveTextFieldTheme({
     this.defaultTheme,
     ReactiveTextFieldStyle? focused,
@@ -61,22 +60,5 @@ class ReactiveTextFieldTheme extends MergeableThemeExtension<ReactiveTextFieldTh
     }
 
     return other;
-  }
-
-  @override
-  ReactiveTextFieldTheme merge(ReactiveTextFieldTheme? other) {
-    if (other == null) {
-      return this;
-    }
-
-    return ReactiveTextFieldTheme(
-      defaultTheme: defaultTheme?.merge(other.defaultTheme) ?? other.defaultTheme,
-      focused: focused?.merge(other.focused) ?? other.focused,
-      error: error?.merge(other.error) ?? other.error,
-      disabled: disabled?.merge(other.disabled) ?? other.disabled,
-      hovered: hovered?.merge(other.hovered) ?? other.hovered,
-      focusedError: focusedError?.merge(other.focusedError) ?? other.focusedError,
-      hoveredError: hoveredError?.merge(other.hoveredError) ?? other.hoveredError,
-    );
   }
 }

@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 
-abstract class MergeableThemeExtension<T extends ThemeExtension<T>> extends ThemeExtension<T> {
-  T merge(T? other);
+extension ThemeExtensionX<T extends ThemeExtension<T>> on ThemeExtension<T> {
+  ThemeExtension<T> merge(T? other) => lerp(other, 1);
 }
 
-T requireMergeableTheme<T extends MergeableThemeExtension<T>>({required BuildContext context, required T propTheme}) {
+ThemeExtension<T> requireTheme<T extends ThemeExtension<T>>({required BuildContext context, required T propTheme}) {
   T? parentTheme;
   try {
     parentTheme = Theme.of(context).extension<T>();

@@ -3,14 +3,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:v_flutter_core/v_flutter_core.dart';
 
 part 'scaffold_behavior.tailor.dart';
 
 typedef ChildedBuilder = Widget Function(BuildContext context, Widget? child);
 
 @TailorMixinComponent()
-class ScaffoldBehavior extends MergeableThemeExtension<ScaffoldBehavior> with _$ScaffoldBehaviorTailorMixin {
+class ScaffoldBehavior extends ThemeExtension<ScaffoldBehavior> with _$ScaffoldBehaviorTailorMixin {
   ScaffoldBehavior({
     this.extendBody,
     this.extendBodyBehindAppBar,
