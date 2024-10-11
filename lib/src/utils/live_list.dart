@@ -98,7 +98,7 @@ class LiveList<ID, T> {
     _disposableList.addAllStreamSubscription(listDependencies.map((d) => _listDependencySubscription(d)));
   }
 
-  final _subject = BehaviorSubject<Iterable<T>>();
+  final _subject = BehaviorSubject<Iterable<T>>(sync: true);
   final _disposableList = DisposableList();
   final _disposableMapGroup = DisposableMapGroup<ID, String>();
   final _dependencyStreams = <ID, Map<String, Stream<String>>>{};

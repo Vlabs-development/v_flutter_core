@@ -8,6 +8,7 @@ export 'src/extensions/list_extensions.dart';
 export 'src/extensions/map_extensions.dart';
 export 'src/extensions/ref_extensions.dart';
 export 'src/extensions/size_extensions.dart';
+export 'src/extensions/stream_extensions.dart';
 export 'src/extensions/string_extensions.dart';
 export 'src/extensions/time_of_day_extensions.dart';
 export 'src/extensions/v_stream.dart';
@@ -37,8 +38,8 @@ export 'src/theme/mergeable_theme_extension/mergeable_theme_extension.dart';
 export 'src/utils/composite_node/composite_node.dart';
 export 'src/utils/composite_node/composite_node_value_accessor.dart';
 export 'src/utils/composite_node/depth_composite_node.dart';
-export 'src/utils/live_list.dart';
 export 'src/utils/handshake_completer.dart';
+export 'src/utils/live_list.dart';
 export 'src/utils/text_input_formatters/round_to_next_time_of_day_formatter.dart';
 export 'src/utils/type_checks.dart';
 
