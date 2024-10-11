@@ -1,3 +1,7 @@
+## 0.0.13
+
+fix: make LiveList's `BehaviorSubject` `sync: true`
+
 ## 0.0.12
 
 feat: add `childPadding` property to the `SeparatedColumn`, `SeparatedFlex` and `SeparatedRow` widgets
