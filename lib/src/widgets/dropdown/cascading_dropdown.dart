@@ -160,7 +160,7 @@ class CascadingDropdown<K, T> extends HookWidget {
               child: MenuAnchor(
                 crossAxisUnconstrained: false,
                 style: MenuStyle(
-                  maximumSize: MaterialStatePropertyAll(
+                  maximumSize: WidgetStatePropertyAll(
                     Size(
                       isExpanded ? anchorWidth.value : double.infinity,
                       maxHeight ?? double.infinity,
@@ -291,7 +291,7 @@ Widget Function(CompositeGroup<K, T>?, CompositeValue<K, T>, double width) _defa
       builder: (context) {
         return MenuItemButton(
           style: ButtonStyle(
-            padding: MaterialStatePropertyAll(EdgeInsets.only(left: leftPadding, right: 16)),
+            padding: WidgetStatePropertyAll(EdgeInsets.only(left: leftPadding, right: 16)),
           ),
           closeOnActivate: closeOnActivate,
           onPressed: () => effectiveOnChanged(!isSelected),

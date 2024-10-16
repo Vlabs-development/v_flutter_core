@@ -15,9 +15,9 @@ class ProgressButtonIndicator extends StatelessWidget {
 
   final double strokeWidth;
   final Widget child;
-  final MaterialStatesController statesController;
+  final WidgetStatesController statesController;
   final bool circular;
-  final T? Function<T>(MaterialStateProperty<T>? Function(ButtonStyle?) getProperty) resolve;
+  final T? Function<T>(WidgetStateProperty<T>? Function(ButtonStyle?) getProperty) resolve;
 
   @override
   Widget build(BuildContext context) {

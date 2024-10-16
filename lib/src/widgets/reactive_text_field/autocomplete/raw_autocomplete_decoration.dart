@@ -165,10 +165,8 @@ class RawAutocompleteDecoration<K, T> extends HookWidget {
       return optionsList[indexOf];
     }
 
-    final isMounted = useIsMounted();
-
     void highlightIndex(int index) {
-      if (!isMounted()) {
+      if (!context.mounted) {
         return;
       }
 

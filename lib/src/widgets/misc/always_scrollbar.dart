@@ -13,7 +13,7 @@ class AlwaysScrollbar extends StatelessWidget {
     return Theme(
       data: Theme.of(context).copyWith(
         scrollbarTheme: Theme.of(context).scrollbarTheme.copyWith(
-              thumbVisibility: const MaterialStatePropertyAll(true),
+              thumbVisibility: const WidgetStatePropertyAll(true),
             ),
       ),
       child: child,
@@ -34,11 +34,11 @@ class NeverScrollbar extends StatelessWidget {
     return Theme(
       data: Theme.of(context).copyWith(
         scrollbarTheme: Theme.of(context).scrollbarTheme.copyWith(
-              thumbVisibility: const MaterialStatePropertyAll(false),
-              trackVisibility: const MaterialStatePropertyAll(false),
-              thumbColor: const MaterialStatePropertyAll(Colors.transparent),
-              trackColor: const MaterialStatePropertyAll(Colors.transparent),
-              trackBorderColor: const MaterialStatePropertyAll(Colors.transparent),
+              thumbVisibility: const WidgetStatePropertyAll(false),
+              trackVisibility: const WidgetStatePropertyAll(false),
+              thumbColor: const WidgetStatePropertyAll(Colors.transparent),
+              trackColor: const WidgetStatePropertyAll(Colors.transparent),
+              trackBorderColor: const WidgetStatePropertyAll(Colors.transparent),
             ),
       ),
       child: child,
