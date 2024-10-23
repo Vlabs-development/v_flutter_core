@@ -1,3 +1,8 @@
+## 0.0.14
+
+chore: bump flutter version to 3.24.3
+chore: bump dependency versions
+
 ## 0.0.13
 
 fix: make LiveList's `BehaviorSubject` `sync: true`

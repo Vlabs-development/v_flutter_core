@@ -1,7 +1,7 @@
 name: v_flutter_core
 description: A core library for Flutter applications, offering essential tools and utilities for streamlined development and state management.
 repository: https://github.com/Vlabs-development/v_flutter_core
-version: 0.0.13
+version: 0.0.14
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
