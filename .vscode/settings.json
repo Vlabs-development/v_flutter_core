@@ -3,6 +3,6 @@
   "dart.lineLength": 120,
   "dart.runPubGetOnPubspecChanges": "never",
   "explorer.fileNesting.patterns": {
-    "*.dart": "${capture}_view.dart, ${capture}_loading.dart, ${capture}_impl.dart, ${capture}_provider.dart, ${capture}_provider.g.dart, ${capture}_empty_view.dart",
-  },
+    "*.dart": "${capture}_view.dart, ${capture}_loading.dart, ${capture}_impl.dart, ${capture}_provider.dart, ${capture}_provider.g.dart, ${capture}_empty_view.dart"
+  }
 }

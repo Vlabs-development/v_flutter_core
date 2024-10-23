@@ -5,8 +5,8 @@ publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.1.0
-  flutter: ^3.13.0
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.3"
 
 dependencies:
   flutter:
@@ -17,16 +17,16 @@ dependencies:
   flutter_hooks: ^0.20.3
   v_flutter_core:
     path: "../"
-  reactive_forms: ^16.1.1
+  reactive_forms: ^17.0.1
   mask_text_input_formatter: ^2.7.0
   collection: ^1.17.2
-  entry: ^0.0.9
+  entry: ^1.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^2.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true

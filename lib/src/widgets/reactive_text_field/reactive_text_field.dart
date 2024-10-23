@@ -2,6 +2,9 @@
 // Use of this source code is governed by the MIT license that can be
 // found in the LICENSE file.
 
+// Added to ignore lints of 17.0.1
+// ignore_for_file: sort_constructors_first, noop_primitive_operations
+
 import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle;
 
 import 'package:flutter/gestures.dart';
@@ -16,13 +19,21 @@ import 'package:reactive_forms/reactive_forms.dart';
 ///
 /// A [ReactiveForm] ancestor is required.
 ///
-/// THIS IS A FORK OF reactive_text_field of reactive_forms 16.1.1
-/// https://github.com/joanpablo/reactive_forms/blob/16.1.1/lib/src/widgets/reactive_text_field.dart
+/// THIS IS A FORK OF reactive_text_field of reactive_forms 17.0.1
+/// https://github.com/joanpablo/reactive_forms/blob/17.0.1/lib/src/widgets/reactive_text_field.dart
 ///
 /// Added the following:
 /// - [showErrorTextWhenEmpty]
 /// - Update [onControlValueChanged] so that the cursor position is maintained when the value does not actually change.
 class ReactiveTextField<T> extends ReactiveFormField<T, String> {
+  final TextEditingController? _textController;
+
+  static Widget _defaultContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
+    return AdaptiveTextSelectionToolbar.editableText(
+      editableTextState: editableTextState,
+    );
+  }
+
   /// Creates a [ReactiveTextField] that contains a [TextField].
   ///
   /// Can optionally provide a [formControl] to bind this widget to a control.
@@ -105,7 +116,7 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
     TextAlignVertical? textAlignVertical,
     bool autofocus = false,
     bool readOnly = false,
-    EditableTextContextMenuBuilder? contextMenuBuilder = defaultEditableTextContextMenuBuilder,
+    EditableTextContextMenuBuilder? contextMenuBuilder = _defaultContextMenuBuilder,
     bool? showCursor,
     bool obscureText = false,
     String obscuringCharacter = '•',
@@ -229,16 +240,9 @@ class ReactiveTextField<T> extends ReactiveFormField<T, String> {
             );
           },
         );
-  final TextEditingController? _textController;
 
   @override
   ReactiveFormFieldState<T, String> createState() => _ReactiveTextFieldState<T>();
-}
-
-Widget defaultEditableTextContextMenuBuilder(BuildContext context, EditableTextState editableTextState) {
-  return AdaptiveTextSelectionToolbar.editableText(
-    editableTextState: editableTextState,
-  );
 }
 
 class _ReactiveTextFieldState<T> extends ReactiveFocusableFormFieldState<T, String> {
@@ -295,6 +299,15 @@ class _ReactiveTextFieldState<T> extends ReactiveFocusableFormFieldState<T, Stri
     final currentWidget = widget as ReactiveTextField<T>;
     _textController =
         (currentWidget._textController != null) ? currentWidget._textController! : TextEditingController();
-    _textController.text = initialValue ?? '';
+    _textController.text = initialValue == null ? '' : initialValue.toString();
+  }
+
+  @override
+  void dispose() {
+    final currentWidget = widget as ReactiveTextField<T>;
+    if (currentWidget._textController == null) {
+      _textController.dispose();
+    }
+    super.dispose();
   }
 }
