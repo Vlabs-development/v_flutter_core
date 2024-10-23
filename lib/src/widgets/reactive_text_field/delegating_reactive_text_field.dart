@@ -59,7 +59,7 @@ class DelegatingReactiveTextField<T> extends HookConsumerWidget {
         canRequestFocus: behavior.canRequestFocus ?? true,
         clipBehavior: theme.clipBehavior ?? Clip.hardEdge,
         contentInsertionConfiguration: behavior.contentInsertionConfiguration,
-        contextMenuBuilder: behavior.contextMenuBuilder ?? defaultEditableTextContextMenuBuilder,
+        contextMenuBuilder: behavior.contextMenuBuilder,
         controller: behavior.controller,
         cursorColor: theme.cursorColor,
         cursorHeight: theme.cursorHeight,
