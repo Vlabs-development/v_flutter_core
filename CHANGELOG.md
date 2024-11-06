@@ -1,3 +1,7 @@
+## 0.0.15
+
+chore: bump riverpod to ^2.6.1
+
 ## 0.0.14
 
 chore: bump flutter version to 3.24.3
