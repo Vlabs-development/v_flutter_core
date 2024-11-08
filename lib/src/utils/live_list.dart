@@ -19,6 +19,14 @@ const unusedFetchItem = 'fetchItem is unused if neither getItemTriggerStream nor
 typedef _ResolvableItemDependencyRecord<T> = (String? Function(T), TriggerStream Function(String));
 typedef _KeyResolvedItemDependencyMap = Map<String, TriggerStream Function(String)>;
 
+enum ItemListStreamBehavior {
+  /// Replaces all existing items with the new items from the stream
+  replace,
+
+  /// Adds new items to the existing collection
+  add
+}
+
 typedef ItemStream<T> = Stream<T>;
 typedef TriggerStream = Stream<void>;
 
@@ -45,6 +53,7 @@ class LiveList<ID, T> {
   final TriggerStream Function(ID id)? getItemTriggerStream;
   final TriggerStream triggerPredicateReevaluation;
   final FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item) getItemDependencyStreams;
+  final ItemListStreamBehavior itemListStreamBehavior;
 
   final ReaderTaskEither<ID, Object?, T>? fetchItem;
   final ID Function(T item) resolveId;
@@ -68,6 +77,7 @@ class LiveList<ID, T> {
     this.includePredicate = _alwaysTrue,
     this.listenPredicate = _alwaysTrue,
     this.listDependencies = const [],
+    this.itemListStreamBehavior = ItemListStreamBehavior.replace,
     FutureOr<List<_ResolvableItemDependencyRecord<T>>> Function(T item)? getItemDependencyStreams,
     Future<T> Function(ID id)? fetchItem,
   })  : getItemDependencyStreams = getItemDependencyStreams ?? _empty,
@@ -84,7 +94,7 @@ class LiveList<ID, T> {
     }
     final liveUpdates = _subject.asMaterializedChangeStream(resolveId);
 
-    _disposableList.addStreamSubscription(itemListStream.listen((items) => _replaceItems(items)));
+    _disposableList.addStreamSubscription(itemListStream.listen((items) => _handleItemListUpdate(items)));
     _disposableList.addStreamSubscription(itemCreatedStream.listen((item) => upsertItem(item)));
     _disposableList.addStreamSubscription(
       triggerPredicateReevaluation.listen((_) {
@@ -120,6 +130,7 @@ class LiveList<ID, T> {
 
   void upsertItem(T externalItem) => _mergeItem(externalItem);
   T? removeItem(ID id) => _removeItemById(id);
+  void clear() => _subject.add([]);
 
   Future<Either<Object?, T>?> refreshItem(ID id) async {
     final _fetchItem = fetchItem;
@@ -367,6 +378,15 @@ class LiveList<ID, T> {
   void _mergeItems(Iterable<T> items) => _update((currentItems) => currentItems.merge(items, equateBy: resolveId));
 
   void _replaceItems(Iterable<T> items) => _update((currentItems) => items);
+
+  void _handleItemListUpdate(Iterable<T> items) {
+    switch (itemListStreamBehavior) {
+      case ItemListStreamBehavior.replace:
+        _replaceItems(items);
+      case ItemListStreamBehavior.add:
+        _mergeItems(items);
+    }
+  }
 
   T? _removeItemById(ID id) {
     T? removedItem;
