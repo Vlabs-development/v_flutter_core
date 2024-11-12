@@ -1,3 +1,7 @@
+## 0.0.16
+
+feat: add ItemListStreamBehavior
+
 ## 0.0.15
 
 chore: bump riverpod to ^2.6.1
