@@ -2,155 +2,75 @@
 
 import 'dart:async';
 
-import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import 'package:time/time.dart';
-import 'package:v_flutter_core/src/utils/live_list.dart';
+import 'package:v_flutter_core/src/utils/live_list/definitions.dart';
+import 'package:v_flutter_core/v_flutter_core.dart';
 
-import 'stream_observer.dart';
+import 'utils/modular_stream.dart';
 
-const testLiveListsAreDisposedAfter = Duration(milliseconds: 900);
-const testTimeoutAfter = Duration(milliseconds: 1000);
+const liveListsDisposeDuration = Duration(milliseconds: 900);
+const testTimeoutDuration = Duration(seconds: 1);
 
 const a = _Model(id: 'a', name: 'A', foreignId: '1');
 const aa = _Model(id: 'a', name: 'AA', foreignId: '2');
 const aaa = _Model(id: 'a', name: 'AAA', foreignId: '2');
 const aaaa = _Model(id: 'a', name: 'AAAA', foreignId: '3');
 const b = _Model(id: 'b', name: 'B');
-const bb = _Model(id: 'b', name: 'BB');
+const bb = _Model(id: 'b', name: 'BB', foreignId: '2');
 const bbb = _Model(id: 'b', name: 'BBB');
 const c = _Model(id: 'c', name: 'C');
 const cc = _Model(id: 'c', name: 'CC');
 const ccc = _Model(id: 'c', name: 'CCC');
 
-bool _listenPredicate(_Model item) => true;
 String _resolveId(_Model item) => item.id;
-bool _includePredicate(_Model item) => true;
 
-class TriggerEvent {
-  TriggerEvent() : after = Duration.zero;
-  TriggerEvent.after(this.after);
-
-  final Duration after;
+abstract class ItemFetcher {
+  Future<_Model> fetchItem(String id);
+  Future<List<_Model>> fetchItems(Iterable<String> ids);
 }
 
-class ItemTriggerEvent {
-  ItemTriggerEvent({
-    required this.id,
-  }) : after = Duration.zero;
-  ItemTriggerEvent.after(
-    this.after, {
-    required this.id,
-  });
-
-  final String id;
-  final Duration after;
-}
-
-class ItemUpdateEvent {
-  ItemUpdateEvent({
-    required this.id,
-    required this.item,
-  }) : after = Duration.zero;
-  ItemUpdateEvent.after(
-    this.after, {
-    required this.id,
-    required this.item,
-  });
-
-  final String id;
-  final Duration after;
-  final _Model item;
-}
-
-class ItemEvent {
-  ItemEvent(this.item) : after = Duration.zero;
-  ItemEvent.after(this.after, this.item);
-
-  final Duration after;
-  final _Model item;
-}
-
-class ItemListEvent {
-  ItemListEvent(this.items) : after = Duration.zero;
-  ItemListEvent.after(this.after, this.items);
-
-  final Duration after;
-  final List<_Model> items;
-}
+class MockItemFetcher extends Mock implements ItemFetcher {}
 
 LiveList<String, _Model> aLiveList({
-  bool Function(_Model item) listenPredicate = _listenPredicate,
-  bool Function(_Model) includePredicate = _includePredicate,
+  MockItemFetcher? mockFetcher,
+  ItemListStreamBehavior itemListStreamBehavior = ItemListStreamBehavior.replace,
   String Function(_Model item) resolveId = _resolveId,
-  Stream<List<_Model>>? itemStream,
-  Stream<_Model> Function(String id)? itemUpdatedStream,
-  Stream<_Model>? itemCreatedStream,
-  List<ItemListEvent>? items,
-  List<ItemUpdateEvent>? updates,
-  List<ItemTriggerEvent>? itemTriggers,
-  TriggerStream Function(String id)? getItemTriggerStream,
-  List<ItemEvent>? creates,
-  FutureOr<List<(String? Function(_Model), TriggerStream Function(String))>> Function(_Model item)?
-      getItemDependencyStreams,
-  FutureOr<_Model> Function(String id)? fetchItem,
-  Duration? disposeAfter = testLiveListsAreDisposedAfter,
-  List<(String? Function(_Model item), List<(String, TriggerEvent)>)>? dependencyUpdates,
+  Stream<List<_Model>>? itemListStream,
+  ModularStream<_Model>? explicitItemCreatedStream,
+  Stream<String>? itemCreatedTriggerStream,
+  FutureOr<List<TriggerDefinition<_Model>>> Function(_Model item)? getTriggerDefinitions,
+  List<(String? Function(_Model item), Map<String, ModularStream<_Model>>)>? explicitTriggerDefinitions,
+  List<ListTriggerDefinition<_Model>> listDependencies = const [],
 }) {
   assert(
-    itemUpdatedStream == null || updates == null,
-    'Both itemUpdatedStream and updates can not be defined at the same time',
+    getTriggerDefinitions == null || explicitTriggerDefinitions == null,
+    'Both getTriggerDefinitions and triggerDefinitionStream can not be defined at the same time',
   );
-  assert(
-    itemCreatedStream == null || creates == null,
-    'Both itemCreatedStream and creates can not be defined at the same time',
-  );
-  assert(
-    itemStream == null || items == null,
-    'Both itemStream and items can not be defined at the same time',
-  );
-  assert(
-    getItemTriggerStream == null || itemTriggers == null,
-    'Both getItemTriggerStream and itemTriggers can not be defined at the same time',
-  );
-  assert(
-    getItemDependencyStreams == null || dependencyUpdates == null,
-    'Both getItemDependencyStreams and dependencyUpdates can not be defined at the same time',
-  );
-  final manualItemsStream = (items ?? []).map((e) => Future.delayed(e.after).then((value) => e.items));
-  final effectiveItemStream = itemStream ?? Stream.fromFutures(manualItemsStream);
-
-  final manualItemUpdateStream = (updates ?? [])
-      .groupListsBy((item) => item.id)
-      .map((key, value) => MapEntry(key, value.map((e) => Future.delayed(e.after).then((_) => e.item))));
-  final effectiveOnItemUpdated = itemUpdatedStream ?? (id) => Stream.fromFutures(manualItemUpdateStream[id] ?? []);
-
-  final manualItemCreatedStream = (creates ?? []).map((e) => Future.delayed(e.after).then((_) => e.item));
-  final effectiveOnItemCreated = itemCreatedStream ?? Stream.fromFutures(manualItemCreatedStream);
-
-  final manualItemIdUpdatedStream = (itemTriggers ?? [])
-      .groupListsBy((item) => item.id)
-      .map((key, value) => MapEntry(key, value.map((e) => Future.delayed(e.after).then((_) => e.id))));
-  final effectiveItemTriggerStream = getItemTriggerStream ??
-      ((itemTriggers?.isNotEmpty ?? false)
-          ? (id) => Stream.fromFutures(manualItemIdUpdatedStream[id] ?? <Future<String>>[])
-          : null);
-
-  final effectiveGetItemDependencyStream = getItemDependencyStreams ??
-      ((dependencyUpdates?.isNotEmpty ?? false)
+  final effectiveGetItemDependencyStream = getTriggerDefinitions ??
+      ((explicitTriggerDefinitions?.isNotEmpty ?? false)
           ? (_Model item) {
-              return dependencyUpdates!
+              return explicitTriggerDefinitions!
                   .map(
-                    (e) => (
+                    (e) => TriggerDefinition<_Model>(
                       (_Model model) => e.$1(model),
                       (String id) {
-                        final grouped = e.$2
-                            .groupListsBy((trigger) => trigger.$1)
-                            .map((key, value) => MapEntry(key, value.map((e) => e.$2)))
-                            .map((key, value) => MapEntry(key, value.map((trigger) => Future.delayed(trigger.after))))
-                            .map((key, value) => MapEntry(key, Stream.fromFuture(Future.wait(value).then((_) => id))));
-
-                        return grouped[id] ?? const Stream.empty();
+                        final stream = e.$2[id];
+                        if (stream == null) {
+                          print('⚠️ Some dependency key of resolved to $id, but there is not stream defined for it');
+                          return const Stream.empty();
+                        }
+                        stream.doBeforeData = (data) {
+                          debugPrint('SETUP mockFetcher `fetchItem(${data.id})` to $data');
+                          if (mockFetcher == null) {
+                            throw 'You must define mockFetcher';
+                          } else {
+                            when(() => mockFetcher.fetchItem(data.id)).thenAnswer((_) async => data);
+                          }
+                        };
+                        return stream.stream;
                       },
                     ),
                   )
@@ -158,242 +78,252 @@ LiveList<String, _Model> aLiveList({
             }
           : null);
 
-  final liveList = LiveList(
-    itemListStream: effectiveItemStream,
-    getItemUpdatedStream: effectiveOnItemUpdated,
-    getItemTriggerStream: effectiveItemTriggerStream,
-    itemCreatedStream: effectiveOnItemCreated,
+  explicitItemCreatedStream ??= ModularStream<_Model>([]);
+  explicitItemCreatedStream.doBeforeData = (data) {
+    debugPrint('SETUP mockFetcher `fetchItem(${data.id})` to $data');
+    if (mockFetcher == null) {
+      throw 'You must define mockFetcher';
+    } else {
+      when(() => mockFetcher.fetchItem(data.id)).thenAnswer((_) async => data);
+    }
+  };
+  final effectiveItemCreatedTriggerStream = itemCreatedTriggerStream ?? explicitItemCreatedStream.stream.map(resolveId);
+
+  final liveList = LiveList<String, _Model>(
+    itemListStream: itemListStream ?? const Stream.empty(),
     resolveId: resolveId,
-    listenPredicate: listenPredicate,
-    includePredicate: includePredicate,
-    fetchItem: fetchItem != null ? (String id) => Future.sync(() => fetchItem(id)) : null,
-    getItemDependencyStreams: effectiveGetItemDependencyStream,
+    fetchItem: (String id) {
+      return mockFetcher!.fetchItem(id);
+    },
+    fetchItems: (Iterable<String> ids) {
+      return mockFetcher!.fetchItems(ids);
+    }.when(mockFetcher != null),
+    itemCreatedTriggerStream: effectiveItemCreatedTriggerStream,
+    getTriggerDefinitions: effectiveGetItemDependencyStream,
+    listTriggers: listDependencies,
+    itemListStreamBehavior: itemListStreamBehavior,
   );
-  if (disposeAfter != null) {
-    Future.delayed(disposeAfter).then((_) => liveList.dispose());
-  }
+
+  liveListsDisposeDuration.afterPassed(liveList.dispose);
+
   addTearDown(liveList.dispose);
   return liveList;
 }
 
-class SequenceReturn<T> {
-  SequenceReturn({
-    required List<T> returnValues,
-  }) : _returnValues = returnValues;
-
-  final List<T> _returnValues;
-
-  int index = 0;
-
-  T next() {
-    if (index >= _returnValues.length) {
-      throw 'No value set for the #$index call';
-    }
-    return _returnValues[index++];
-  }
-
-  List<T> getAll() => _returnValues;
-}
-
-void noOp() {}
-
-extension _I<T> on List<T> {
-  StreamObserver<T> get streamObserver {
-    return StreamObserver(this.stream);
-  }
-
-  Stream<T> get stream {
-    return Stream.fromIterable(this);
-  }
-}
-
-extension _D on Duration {
-  StreamObserver<T> then<T>(T item) {
-    return StreamObserver<T>(Stream.fromFuture(Future.delayed(this).then((_) => item)));
-  }
-
-  StreamObserver<void> thenTrigger() {
-    return StreamObserver<void>(Stream.fromFuture(Future.delayed(this)));
-  }
-}
-
 void main() {
   group(
-    'timeout',
+    'Test timeouts after 1s',
+    timeout: const Timeout(testTimeoutDuration),
     () {
-      // note that `aLiveList` calls `addTearDown(list.dispose);` internally
-      group('subscription', () {
-        group('itemListStream', () {
-          test('is listened to once and is unsubscribed from', () async {
-            final streamObserver = [
-              [a],
-              [aa],
-              [aaa],
-            ].streamObserver;
+      setUpAll(() {
+        registerFallbackValue(const _Model(id: '1', name: '1'));
+      });
 
-            expect(
-              aLiveList(
-                itemStream: streamObserver.stream,
-                updates: [
-                  ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaaa),
-                  ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
-                ],
-              ).stream,
-              emitsInOrder([
+      late MockItemFetcher mockFetcher;
+      setUp(() {
+        mockFetcher = MockItemFetcher();
+      });
+      tearDown(() {
+        reset(mockFetcher);
+      });
+
+      group('group', () {
+        group('subscription handling', () {
+          group('when LiveList gets disposed', () {
+            test('itemListStream subscription is disposed', () {
+              final itemListStream = aModularStream<List<_Model>>([
                 [a],
-                [aa],
-                [aaa],
-                [aaaa],
-                [aaa],
-              ]),
-            );
-            expect(streamObserver.listenCount, emits(1));
-            expect(streamObserver.listenCount, neverEmits(2));
-            expect(streamObserver.cancelCount, emits(1));
-            expect(streamObserver.cancelCount, neverEmits(2));
-            expect(streamObserver.doneCount, emits(1));
-            expect(streamObserver.doneCount, neverEmits(2));
-          });
-        });
+              ]);
 
-        group('itemUpdatedStream', () {
-          test('is listened to once and is unsubscribed from', () async {
-            final streamObserver = [aa, aaa].streamObserver;
+              final liveList = aLiveList(itemListStream: itemListStream.stream);
+              liveList.dispose();
 
-            expect(
-              aLiveList(
-                items: [
-                  ItemListEvent([a, b]),
-                  ItemListEvent.after(100.milliseconds, [aaaa, b]),
-                  ItemListEvent.after(200.milliseconds, [aaa, b]),
-                ],
-                itemUpdatedStream: (id) => id == a.id ? streamObserver.stream : const Stream.empty(),
-              ).stream,
-              emitsInOrder([
-                [a, b],
-                [aa, b],
-                [aaa, b],
-                [aaaa, b],
-                [aaa, b],
-              ]),
-            );
-            expect(streamObserver.listenCount, emits(1));
-            expect(streamObserver.listenCount, neverEmits(2));
-            expect(streamObserver.cancelCount, emits(1));
-            expect(streamObserver.cancelCount, neverEmits(2));
-            expect(streamObserver.doneCount, emits(1));
-            expect(streamObserver.doneCount, neverEmits(2));
-          });
+              expect(itemListStream.subscriptionCount, 1);
+              expect(itemListStream.cancelCount, 1);
+            });
+            test('itemCreatedTriggerStream subscription is disposed', () {
+              final itemCreatedTriggerStream = aModularStream<String>([
+                'a',
+              ]);
 
-          test('is get and listened to again when item reappears', () {
-            final sequenceReturn = SequenceReturn<StreamObserver<_Model>>(
-              returnValues: [
-                [aa, aaa].streamObserver,
-                600.milliseconds.then(aaaa),
-              ],
-            );
+              final liveList = aLiveList(itemCreatedTriggerStream: itemCreatedTriggerStream.stream);
+              liveList.dispose();
 
-            expect(
-              aLiveList(
-                items: [
-                  ItemListEvent([a, b]),
-                  ItemListEvent.after(100.milliseconds, [b]),
-                  ItemListEvent.after(200.milliseconds, [a, b]),
-                ],
-                itemUpdatedStream: (id) {
-                  return id == a.id ? sequenceReturn.next().stream : const Stream.empty();
-                },
-              ).stream,
-              emitsInOrder([
-                [a, b],
-                [aa, b],
-                [aaa, b],
-                [b],
-                [a, b],
-                [aaaa, b],
-              ]),
-            );
-            for (final s in sequenceReturn.getAll()) {
-              expect(s.cancelCount, emits(1));
-              expect(s.cancelCount, neverEmits(2));
-              // expect(s.doneCount, emits(1));
-              // expect(s.doneCount, neverEmits(2));
-            }
-          });
-
-          test('is not listened to at all when listenPredicate is false', () async {
-            final streamObserver = [aa, aaa].streamObserver;
-
-            await expectLater(
-              aLiveList(
-                items: [
-                  ItemListEvent([a]),
-                ],
-                listenPredicate: (item) => item.id != a.id,
-                itemUpdatedStream: (id) => id == a.id ? streamObserver.stream : const Stream.empty(),
-              ).stream,
-              emitsInOrder([
-                [a],
-              ]),
-            );
-            streamObserver.dispose();
-            expect(streamObserver.listenCount, neverEmits(anything));
-            expect(streamObserver.cancelCount, neverEmits(anything));
-            expect(streamObserver.doneCount, neverEmits(anything));
-          });
-        });
-        group('itemCreatedStream', () {
-          test('is listened to once and is unsubscribed from', () async {
-            final streamObserver = [b].streamObserver;
-
-            await expectLater(
-              aLiveList(
-                items: [
-                  ItemListEvent.after(100.milliseconds, [a]),
-                ],
-                updates: [
-                  ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aa),
-                ],
-                itemCreatedStream: streamObserver.stream,
-              ).stream,
-              emitsInOrder([
-                [b],
-                [a],
-                [aa],
-              ]),
-            );
-            expect(streamObserver.listenCount, emits(1));
-            expect(streamObserver.listenCount, neverEmits(2));
-            expect(streamObserver.cancelCount, emits(1));
-            expect(streamObserver.cancelCount, neverEmits(2));
-            expect(streamObserver.doneCount, emits(1));
-            expect(streamObserver.doneCount, neverEmits(2));
-          });
-        });
-        group('dependencyStream', () {
-          test(
-            'although item updates frequently, dependency stream is only listened to once',
-            () async {
-              final streamObserver = 300.milliseconds.then(null);
+              expect(itemCreatedTriggerStream.subscriptionCount, 1);
+              expect(itemCreatedTriggerStream.cancelCount, 1);
+            });
+            test('TriggerDefinition stream subscription is disposed', () async {
+              final triggerStream = aModularStream<_Model>([
+                aa,
+              ]);
 
               final liveList = aLiveList(
-                items: [
-                  ItemListEvent([aa]),
-                ],
-                updates: [
-                  ItemUpdateEvent.after(10.milliseconds, id: a.id, item: aaa),
-                  ItemUpdateEvent.after(20.milliseconds, id: a.id, item: aa),
-                  ItemUpdateEvent.after(30.milliseconds, id: a.id, item: aaa),
-                  ItemUpdateEvent.after(40.milliseconds, id: a.id, item: aa),
-                  ItemUpdateEvent.after(50.milliseconds, id: a.id, item: aaa),
-                ],
-                getItemDependencyStreams: (item) => [
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [a],
+                ]),
+                explicitTriggerDefinitions: [
                   (
                     (item) => item.foreignId,
-                    (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
+                    {
+                      '1': triggerStream,
+                    },
                   ),
                 ],
-                fetchItem: (id) => a,
+              );
+              await Future<void>.delayed(1.milliseconds);
+              liveList.dispose();
+
+              expect(triggerStream.subscriptionCount, 1);
+              expect(triggerStream.cancelCount, 1);
+            });
+            test('listDependencies subscription is disposed', () {
+              final listDependencyStream = aModularStream<List<_Model>>([
+                [aa],
+              ]);
+
+              final liveList = aLiveList(
+                mockFetcher: mockFetcher,
+                listDependencies: [
+                  ListTriggerDefinition(
+                    appliesTo: (item) => item.foreignId == '2',
+                    stream: listDependencyStream.stream,
+                  ),
+                ],
+              );
+              liveList.dispose();
+
+              expect(listDependencyStream.subscriptionCount, 1);
+              expect(listDependencyStream.cancelCount, 1);
+            });
+          });
+
+          group('TriggerDefinition', () {
+            test('TriggerDefinition stream is only listened to once', () async {
+              final triggerStream = aModularStream<_Model>([]);
+
+              aLiveList(
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [aa],
+                  [aaa],
+                  [aa],
+                  [aaa],
+                  [aa],
+                  [aaa],
+                  [aa],
+                  [aaa],
+                ]),
+                explicitTriggerDefinitions: [
+                  (
+                    (item) => item.foreignId,
+                    {
+                      '2': triggerStream,
+                    },
+                  ),
+                ],
+              );
+              await Future<void>.delayed(1.milliseconds);
+
+              expect(triggerStream.subscriptionCount, 1);
+              expect(triggerStream.cancelCount, 1);
+            });
+            test(
+                'TriggerDefinition stream subscription is disposed when a new item is fetched that makes it irrelevant',
+                () async {
+              final triggerStream = aModularStream<_Model>([
+                aaa,
+              ]);
+
+              aLiveList(
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [a],
+                ]),
+                explicitTriggerDefinitions: [
+                  (
+                    (item) => item.foreignId,
+                    {
+                      '1': triggerStream,
+                    },
+                  ),
+                ],
+              );
+              await Future<void>.delayed(1.milliseconds);
+
+              expect(triggerStream.subscriptionCount, 1);
+              expect(triggerStream.cancelCount, 1);
+            });
+            test('TriggerDefinition stream subscription is disposed when item is removed', () async {
+              final triggerStream = aModularStream<_Model>([
+                100.milliseconds,
+                aaa,
+              ]);
+
+              final liveList = aLiveList(
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [a],
+                ]),
+                explicitTriggerDefinitions: [
+                  (
+                    (item) => item.foreignId,
+                    {
+                      '1': triggerStream,
+                      '2': ModularStream<_Model>([]),
+                    },
+                  ),
+                ],
+              );
+
+              await expectLater(liveList.stream, emits([a]));
+              liveList.removeItem(a.id);
+              await expectLater(liveList.stream, emits([]));
+              expect(
+                liveList.stream,
+                neverEmits([
+                  [aaa],
+                ]),
+              );
+
+              expect(triggerStream.subscriptionCount, 1);
+              expect(triggerStream.emissionCount, 0);
+              expect(triggerStream.cancelCount, 1);
+            });
+            test('TriggerDefinition stream subscription is not listened to once when other stream becomes active',
+                () async {
+              final aIdTriggerStream = aModularStream<_Model>([
+                50.milliseconds,
+                aaa,
+                50.milliseconds,
+                a,
+              ]);
+              final foreignId2TriggerStream = aModularStream<_Model>([
+                75.milliseconds,
+                aaaa,
+              ]);
+
+              final liveList = aLiveList(
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [aa],
+                ]),
+                explicitTriggerDefinitions: [
+                  (
+                    (item) => item.foreignId,
+                    {
+                      '1': ModularStream<_Model>([]),
+                      '2': foreignId2TriggerStream,
+                      '3': ModularStream<_Model>([]),
+                    },
+                  ),
+                  (
+                    (item) => item.id,
+                    {
+                      'a': aIdTriggerStream,
+                    },
+                  ),
+                ],
               );
 
               await expectLater(
@@ -401,1058 +331,533 @@ void main() {
                 emitsInOrder([
                   [aa],
                   [aaa],
-                  [aa],
-                  [aaa],
-                  [aa],
-                  [aaa],
+                  [aaaa],
                   [a],
                 ]),
               );
-              expect(streamObserver.listenCount, emits(1));
-              expect(streamObserver.cancelCount, emits(1));
-            },
-          );
-          test(
-            'cancelled without any emits when it is no longer relevant',
-            () async {
-              final streamObserver = 300.milliseconds.then(null);
+
+              expect(aIdTriggerStream.subscriptionCount, 1);
+              expect(aIdTriggerStream.cancelCount, 1);
+            });
+          });
+          group('listDependencies', () {
+            test('ListTriggerDefinition stream is only listened to once', () async {
+              when(() => mockFetcher.fetchItems(['a'])).thenAnswer((_) async => [aaa]);
+              final listDependencyStream = aTriggerStream([
+                25.milliseconds,
+                25.milliseconds,
+                25.milliseconds,
+                25.milliseconds,
+              ]);
 
               final liveList = aLiveList(
-                disposeAfter: null,
-                items: [
-                  ItemListEvent([aa]),
-                ],
-                updates: [
-                  ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aaaa),
-                ],
-                getItemDependencyStreams: (item) => [
-                  (
-                    (item) => item.foreignId,
-                    (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [aa],
+                ]),
+                listDependencies: [
+                  ListTriggerDefinition(
+                    appliesTo: (item) => item.foreignId == '2',
+                    stream: listDependencyStream.stream,
                   ),
                 ],
-                fetchItem: (id) => a,
               );
 
-              await expectLater(
+              expect(
                 liveList.stream,
                 emitsInOrder([
                   [aa],
-                  [aaaa],
+                  [aaa],
+                  [aaa],
+                  [aaa],
+                  [aaa],
                 ]),
               );
-              expect(streamObserver.emitCount, neverEmits(anything));
-              expect(streamObserver.listenCount, emits(1));
-              expect(streamObserver.cancelCount, emits(1));
-              streamObserver.dispose();
-            },
-          );
-          test('is not listened to at all when listenPredicate is false', () async {
-            final streamObserver = 100.milliseconds.then(null);
+              expect(listDependencyStream.subscriptionCount, 1);
+            });
+          });
+        });
 
+        group('itemListStream', () {
+          group('behavior: replace', () {
+            test('events are emitted, replacing existing items', () {
+              final liveList = aLiveList(
+                // ignore: avoid_redundant_argument_values
+                itemListStreamBehavior: ItemListStreamBehavior.replace,
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [a],
+                  [a, b],
+                  [b],
+                ]),
+              );
+
+              expect(
+                liveList.stream,
+                emitsInOrder([
+                  [a],
+                  [a, b],
+                  [b],
+                ]),
+              );
+            });
+          });
+          group('behavior: add', () {
+            test('events are emitted, adding to existing items', () {
+              final liveList = aLiveList(
+                // ignore: avoid_redundant_argument_values
+                itemListStreamBehavior: ItemListStreamBehavior.add,
+                mockFetcher: mockFetcher,
+                itemListStream: aStream([
+                  [a],
+                  [b],
+                  [bb],
+                ]),
+              );
+
+              expect(
+                liveList.stream,
+                emitsInOrder([
+                  [a],
+                  [a, b],
+                  [a, bb],
+                ]),
+              );
+            });
+          });
+        });
+
+        group('itemCreatedTriggerStream', () {
+          test('items are added to the list', () async {
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([aa]),
-              ],
-              getItemDependencyStreams: (item) => [
+              mockFetcher: mockFetcher,
+              explicitItemCreatedStream: aModularStream([a, bb, ccc]),
+            );
+
+            expect(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [a, bb],
+                [a, bb, ccc],
+              ]),
+            );
+          });
+        });
+
+        group('TriggerDefinition', () {
+          test('singular trigger stream items are added to the list', () {
+            final liveList = aLiveList(
+              mockFetcher: mockFetcher,
+              itemListStream: aStream([
+                [aa],
+              ]),
+              explicitTriggerDefinitions: [
                 (
                   (item) => item.foreignId,
-                  (foreignId) => foreignId == '2' ? streamObserver.stream : const Stream.empty(),
+                  {
+                    '2': ModularStream<_Model>([
+                      10.milliseconds,
+                      aaa,
+                      10.milliseconds,
+                      aa,
+                      10.milliseconds,
+                      aaa,
+                      10.milliseconds,
+                      aa,
+                    ]),
+                  },
                 ),
               ],
-              fetchItem: (id) => a,
-              listenPredicate: (item) => item.id != a.id,
             );
 
             expect(
               liveList.stream,
               emitsInOrder([
                 [aa],
+                [aaa],
+                [aa],
+                [aaa],
+                [aa],
               ]),
             );
-            expect(streamObserver.emitCount, neverEmits(anything));
-            expect(streamObserver.listenCount, neverEmits(anything));
-            expect(streamObserver.cancelCount, neverEmits(anything));
-            streamObserver.dispose();
           });
-        });
-      });
-
-      group('itemListStream event', () {
-        test('fires exact same items subsequently', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(100.milliseconds, [a, bb]),
-                ItemListEvent.after(200.milliseconds, [aa, bb]),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [a, bb],
-              [aa, bb],
-            ]),
-          );
-        });
-
-        test('overrides individual item update (update)', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(200.milliseconds, [a, bb]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [a, bb],
-            ]),
-          );
-        });
-
-        test('overrides individual item update (remove)', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(100.milliseconds, [b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(10.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(20.milliseconds, id: a.id, item: aaa),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aaa, b],
-              [b],
-            ]),
-          );
-        });
-      });
-
-      group('itemUpdatedStream event', () {
-        test('fires items (with updated item) subsequently', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: b.id, item: bb),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aa, bb],
-            ]),
-          );
-        });
-
-        test('have no effect after item is no longer present', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(200.milliseconds, [aaaa]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: b.id, item: bb),
-                ItemUpdateEvent.after(300.milliseconds, id: b.id, item: bbb),
-                ItemUpdateEvent.after(400.milliseconds, id: a.id, item: aa),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [a, bb],
-              [aaaa],
-              [aa],
-            ]),
-          );
-        });
-
-        test('of newly created item fires items (with updated item) subsequently', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: b.id, item: bb),
-                // listening to c starts after it appears, that is why the durations are strange here
-                ItemUpdateEvent.after(100.milliseconds, id: c.id, item: cc), // this is esentially 300 + 100 here
-                ItemUpdateEvent.after(200.milliseconds, id: c.id, item: ccc), // 300 + 200
-                ItemUpdateEvent.after(600.milliseconds, id: a.id, item: aaa),
-              ],
-              creates: [
-                ItemEvent.after(300.milliseconds, c),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aa, bb],
-              [aa, bb, c],
-              [aa, bb, cc],
-              [aa, bb, ccc],
-              [aaa, bb, ccc],
-            ]),
-          );
-        });
-        test('of explicitly added item fires items (with updated item) subsequently', () async {
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a]),
-            ],
-            updates: [
-              ItemUpdateEvent.after(100.milliseconds, id: b.id, item: bb),
-              ItemUpdateEvent.after(200.milliseconds, id: b.id, item: bbb),
-            ],
-          );
-
-          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.upsertItem(b));
-
-          expect(
-            liveList.stream,
-            emitsInOrder([
-              [a],
-              [a, b],
-              [a, bb],
-              [a, bbb],
-            ]),
-          );
-        });
-      });
-      group('itemTriggerStream event', () {
-        test('fires items (with updated item) subsequently', () {
-          final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
-          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
-          _Model getNext(String id) => switch (id) {
-                'a' => getA.next(),
-                'b' => getB.next(),
-                _ => throw 'No return defined for $id',
-              };
-
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              itemTriggers: [
-                ItemTriggerEvent.after(100.milliseconds, id: a.id),
-                ItemTriggerEvent.after(200.milliseconds, id: b.id),
-                ItemTriggerEvent.after(300.milliseconds, id: a.id),
-                ItemTriggerEvent.after(400.milliseconds, id: b.id),
-              ],
-              fetchItem: (id) => getNext(id),
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aa, bb],
-              [aaa, bb],
-              [aaa, bbb],
-            ]),
-          );
-        });
-
-        test('have no effect after item is no longer present', () {
-          final getA = SequenceReturn<_Model>(returnValues: [aa]);
-          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
-          _Model getNext(String id) => switch (id) {
-                'a' => getA.next(),
-                'b' => getB.next(),
-                _ => throw 'No return defined for $id',
-              };
-
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(200.milliseconds, [aaaa]),
-              ],
-              itemTriggers: [
-                ItemTriggerEvent.after(100.milliseconds, id: b.id),
-                ItemTriggerEvent.after(300.milliseconds, id: b.id),
-                ItemTriggerEvent.after(400.milliseconds, id: a.id),
-              ],
-              fetchItem: (id) => getNext(id),
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [a, bb],
-              [aaaa],
-              [aa],
-            ]),
-          );
-        });
-
-        test('of newly created item fires items (with updated item) subsequently', () {
-          final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
-          final getB = SequenceReturn<_Model>(returnValues: [bb]);
-          final getC = SequenceReturn<_Model>(returnValues: [cc, ccc]);
-          _Model getNext(String id) => switch (id) {
-                'a' => getA.next(),
-                'b' => getB.next(),
-                'c' => getC.next(),
-                _ => throw 'No return defined for $id',
-              };
-
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              itemTriggers: [
-                ItemTriggerEvent.after(100.milliseconds, id: a.id),
-                ItemTriggerEvent.after(200.milliseconds, id: b.id),
-                // listening to c starts after it appears, that is why the durations are strange here
-                ItemTriggerEvent.after(100.milliseconds, id: c.id), // this is esentially 300 + 100 here
-                ItemTriggerEvent.after(200.milliseconds, id: c.id), // 300 + 200
-                ItemTriggerEvent.after(600.milliseconds, id: a.id),
-              ],
-              creates: [
-                ItemEvent.after(300.milliseconds, c),
-              ],
-              fetchItem: (id) => getNext(id),
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aa, bb],
-              [aa, bb, c],
-              [aa, bb, cc],
-              [aa, bb, ccc],
-              [aaa, bb, ccc],
-            ]),
-          );
-        });
-        test('of explicitly added item fires items (with updated item) subsequently', () async {
-          final getB = SequenceReturn<_Model>(returnValues: [bb, bbb]);
-          _Model getNext(String id) => switch (id) {
-                'b' => getB.next(),
-                _ => throw 'No return defined for $id',
-              };
-
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a]),
-            ],
-            itemTriggers: [
-              ItemTriggerEvent.after(100.milliseconds, id: b.id),
-              ItemTriggerEvent.after(200.milliseconds, id: b.id),
-            ],
-            fetchItem: (id) => getNext(id),
-          );
-
-          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.upsertItem(b));
-
-          expect(
-            liveList.stream,
-            emitsInOrder([
-              [a],
-              [a, b],
-              [a, bb],
-              [a, bbb],
-            ]),
-          );
-        });
-
-        group('deferItemIdUpdate', () {
-          test('skips single id update', () {
-            final getA = SequenceReturn<_Model>(returnValues: [aa]);
-
+          test('multiple trigger streams update the list simultaneously', () {
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
+              mockFetcher: mockFetcher,
+              itemListStream: aStream([
+                [aa],
+              ]),
+              explicitTriggerDefinitions: [
+                (
+                  (item) => item.id,
+                  {
+                    'a': ModularStream<_Model>([
+                      30.milliseconds,
+                      aaa,
+                      30.milliseconds,
+                      aaa,
+                    ]),
+                  },
+                ),
+                (
+                  (item) => item.foreignId,
+                  {
+                    '2': ModularStream<_Model>([
+                      50.milliseconds,
+                      aa,
+                      50.milliseconds,
+                      aa,
+                    ]),
+                  },
+                ),
               ],
-              itemTriggers: [
-                ItemTriggerEvent.after(100.milliseconds, id: a.id),
-              ],
-              fetchItem: (id) => getA.next(),
             );
-
-            final completer = liveList.deferItemTrigger(a.id);
-            Future<void>.delayed(300.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
 
             expect(
               liveList.stream,
               emitsInOrder([
-                [a],
-                [aaaa],
+                [aa],
+                [aaa],
+                [aa],
+                [aaa],
+                [aa],
               ]),
             );
           });
-
-          test('skips every id update', () {
-            final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
-
+          test('one trigger stream can rule out other, by making the requirement not met', () {
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
+              mockFetcher: mockFetcher,
+              itemListStream: aStream([
+                [aa],
+              ]),
+              explicitTriggerDefinitions: [
+                (
+                  (item) => item.id,
+                  {
+                    'a': ModularStream<_Model>([
+                      50.milliseconds,
+                      a, // foreignId is not '2' but '1'
+                    ]),
+                  },
+                ),
+                (
+                  (item) => item.foreignId,
+                  {
+                    '2': ModularStream<_Model>([
+                      30.milliseconds,
+                      aaa,
+                      50.milliseconds,
+                      aaaa,
+                    ]),
+                  },
+                ),
               ],
-              itemTriggers: [
-                ItemTriggerEvent.after(100.milliseconds, id: a.id),
-                ItemTriggerEvent.after(200.milliseconds, id: a.id),
-              ],
-              fetchItem: (id) => getA.next(),
             );
-
-            final completer = liveList.deferItemTrigger(a.id);
-            Future<void>.delayed(300.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
 
             expect(
               liveList.stream,
               emitsInOrder([
+                [aa],
+                [aaa],
                 [a],
-                [aaaa],
               ]),
             );
-          });
-
-          test('skips singular update while deferring', () {
-            final getA = SequenceReturn<_Model>(returnValues: [aa]);
-
-            final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              itemTriggers: [
-                ItemTriggerEvent.after(20.milliseconds, id: a.id),
-              ],
-              fetchItem: (id) => getA.next(),
-            );
-
-            final completer = liveList.deferItemTrigger(a.id);
-            Future<void>.delayed(100.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
-
             expect(
               liveList.stream,
-              emitsInOrder([
-                [a],
+              neverEmits([
                 [aaaa],
               ]),
             );
-            expect(liveList.stream, neverEmits([aa]));
           });
-
-          test('calls fetchItem once when multiple updates fired while deferring', () {
-            final getA = SequenceReturn<_Model>(returnValues: [aa, aaa]);
+        });
+        group('ListTriggerDefinition', () {
+          test('Fetches items that apply the defintin', () async {
+            when(() => mockFetcher.fetchItems(['a', 'b'])).thenAnswer((_) async => [a, bb]);
+            when(() => mockFetcher.fetchItems(['b'])).thenAnswer((_) async => [b]);
 
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
+              mockFetcher: mockFetcher,
+              itemListStream: aStream([
+                [aa, bb],
+              ]),
+              listDependencies: [
+                ListTriggerDefinition(
+                  appliesTo: (item) => item.foreignId == '2',
+                  stream: aTriggerStream([
+                    10.milliseconds,
+                    10.milliseconds,
+                    10.milliseconds,
+                    10.milliseconds,
+                    10.milliseconds,
+                  ]).stream,
+                ),
               ],
-              itemTriggers: [
-                ItemTriggerEvent.after(20.milliseconds, id: a.id),
-                ItemTriggerEvent.after(40.milliseconds, id: a.id),
-                ItemTriggerEvent.after(60.milliseconds, id: a.id),
-                ItemTriggerEvent.after(80.milliseconds, id: a.id),
-                ItemTriggerEvent.after(100.milliseconds, id: a.id),
-                ItemTriggerEvent.after(120.milliseconds, id: a.id),
-                ItemTriggerEvent.after(140.milliseconds, id: a.id),
+            );
+
+            await expectLater(
+              liveList.stream,
+              emitsInOrder([
+                [aa, bb],
+                [a, bb],
+                [a, b],
+              ]),
+            );
+            verify(() => mockFetcher.fetchItems(['a', 'b'])).called(1);
+            verify(() => mockFetcher.fetchItems(['b'])).called(1);
+            verifyNoMoreInteractions(mockFetcher);
+          });
+        });
+      });
+
+      group('deferredItemTrigger', () {
+        group('0 trigger while deferring', () {
+          test('deferred item is added if succeeds, no fresh item is fetched', () async {
+            final liveList = aLiveList(
+              mockFetcher: mockFetcher,
+              getTriggerDefinitions: (item) {
+                return [
+                  TriggerDefinition(
+                    (_model) => _model.id,
+                    (id) => const Stream.empty(),
+                  ),
+                ];
+              },
+            );
+            liveList.upsertItem(a);
+
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            await completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                await Future.delayed(50.milliseconds);
+                expect(liveList.items, equals([a]));
+                completer.complete(aaa);
+                await completer.future;
+                await expectLater(
+                  liveList.stream,
+                  emitsInOrder([
+                    [aaa],
+                  ]),
+                );
+                verifyZeroInteractions(mockFetcher);
+              },
+            );
+          });
+          test('no item is added if deferred item fails', () async {
+            final liveList = aLiveList(
+              mockFetcher: mockFetcher,
+              getTriggerDefinitions: (item) {
+                return [
+                  TriggerDefinition(
+                    (_model) => _model.id,
+                    (id) => const Stream.empty(),
+                  ),
+                ];
+              },
+            );
+            liveList.upsertItem(a);
+
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            await completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                expect(liveList.items, equals([a]));
+                await Future.delayed(50.milliseconds);
+                completer.completeError(Exception('failed'));
+                await completer.futureIgnoreErrors;
+                verifyZeroInteractions(mockFetcher);
+                expect(liveList.items, equals([a]));
+              },
+            );
+          });
+        });
+
+        group('exactly 1 trigger while deferring', () {
+          test('deferred item is added if succeeds, no fresh item is fetched', () async {
+            final liveList = aLiveList(
+              mockFetcher: mockFetcher,
+              explicitTriggerDefinitions: [
+                (
+                  (item) => item.foreignId,
+                  {
+                    '1': ModularStream<_Model>([
+                      50.milliseconds,
+                      aa,
+                    ]),
+                  },
+                ),
               ],
-              fetchItem: (id) {
-                return getA.next();
+            );
+            liveList.upsertItem(a);
+
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                await Future.delayed(100.milliseconds);
+                completer.complete(aaa);
+                await completer.future;
+                verifyZeroInteractions(mockFetcher);
               },
             );
 
-            final completer = liveList.deferItemTrigger(a.id);
-            Future<void>.delayed(200.milliseconds).then((value) => completer.completeAwaitingHandshake(aaaa));
+            await expectLater(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaa],
+              ]),
+            );
+          });
+          test('fresh item is fetched if deferred item fails', () async {
+            final liveList = aLiveList(
+              mockFetcher: mockFetcher,
+              explicitTriggerDefinitions: [
+                (
+                  (item) => item.foreignId,
+                  {
+                    '1': ModularStream<_Model>([
+                      50.milliseconds,
+                      aa,
+                    ]),
+                  },
+                ),
+              ],
+            );
+            liveList.upsertItem(a);
 
-            expect(
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                await Future.delayed(100.milliseconds);
+                when(() => mockFetcher.fetchItem('a')).thenAnswer((_) async => aaaa);
+                completer.completeError(Exception('failed'));
+                await completer.futureIgnoreErrors;
+                verify(() => mockFetcher.fetchItem('a')).called(1);
+              },
+            );
+
+            await expectLater(
               liveList.stream,
               emitsInOrder([
                 [a],
                 [aaaa],
-                [aa],
-              ]),
-            );
-            expect(liveList.stream, neverEmits([aaa]));
-          });
-
-          test('does not skip update if completer fails', () {
-            final getA = SequenceReturn<_Model>(returnValues: [aa]);
-
-            final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              itemTriggers: [
-                ItemTriggerEvent.after(50.milliseconds, id: a.id),
-              ],
-              fetchItem: (id) => getA.next(),
-            );
-
-            final completer = liveList.deferItemTrigger(a.id);
-            Future<void>.delayed(100.milliseconds).then((value) => completer.completeError('NOPE'));
-
-            expect(
-              liveList.stream,
-              emitsInOrder([
-                [a],
-                [aa],
               ]),
             );
           });
         });
-      });
 
-      group('itemCreatedStream event', () {
-        test('fires items (with new item) subsequently', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
-              ],
-              creates: [
-                ItemEvent.after(300.milliseconds, b),
-                ItemEvent.after(400.milliseconds, c),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a],
-              [aa],
-              [aaa],
-              [aaa, b],
-              [aaa, b, c],
-            ]),
-          );
-        });
-
-        test('of existing item (invalid) acts as an itemUpdate event', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              creates: [
-                ItemEvent.after(100.milliseconds, aa),
-                ItemEvent.after(200.milliseconds, aaa),
-              ],
-            ).stream,
-            emitsInOrder([
-              [a],
-              [aa],
-              [aaa],
-            ]),
-          );
-        });
-      });
-
-      group('when listenPredicate is false', () {
-        test('individual item update is ignored', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
-                ItemUpdateEvent.after(300.milliseconds, id: b.id, item: bb),
-              ],
-              listenPredicate: (item) => item.id != a.id,
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [a, bb],
-            ]),
-          );
-        });
-        test('individual item update is eventually ignored after listenPredicate becomes false', () async {
-          final aStream = [aa, aaa].streamObserver;
-          final bStream = 300.milliseconds.then(bb);
-
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a, b]),
-            ],
-            itemUpdatedStream: (id) => switch (id) {
-              'a' => aStream.stream,
-              'b' => bStream.stream,
-              _ => const Stream.empty() //
-            },
-            listenPredicate: (item) => item.name != 'AA',
-          );
-
-          await expectLater(
-            liveList.stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aa, bb],
-            ]),
-          );
-          // TOTO assert aStream is done before [aa, bb]
-        });
-        test('initially ignored item is listened to after listenPredicate result changes via items update', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(100.milliseconds, [aa, b]),
-              ],
-              updates: [
-                ItemUpdateEvent(id: a.id, item: aaa),
-              ],
-              listenPredicate: (item) => item.name != 'A',
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aaa, b],
-            ]),
-          );
-        });
-        test('eventually ignored item is listened to again after listenPredicate result changes via items update',
-            () async {
-          final first = [aa].streamObserver;
-          final second = [a].streamObserver;
-
-          final sequenceReturn = SequenceReturn<StreamObserver<_Model>>(
-            returnValues: [first, second],
-          );
-
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a, b]),
-              ItemListEvent.after(200.milliseconds, [aaa, b]),
-            ],
-            itemUpdatedStream: (id) => id == a.id ? sequenceReturn.next().stream : const Stream.empty(),
-            listenPredicate: (item) => item.name != 'AA',
-          );
-          await expectLater(
-            liveList.stream,
-            emitsInOrder([
-              [a, b],
-              [aa, b],
-              [aaa, b],
-            ]),
-          );
-          await expectLater(first.cancelCount, emits(1));
-          await expectLater(
-            liveList.stream,
-            emitsInOrder([
-              [a, b],
-            ]),
-          );
-          await expectLater(second.cancelCount, emits(1));
-        });
-        test('item dependencies are ignored', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              dependencyUpdates: [
-                (
-                  (item) => item.foreignId,
-                  [('1', TriggerEvent.after(50.milliseconds))],
-                ),
-              ],
-              fetchItem: (id) => aaaa,
-              listenPredicate: (item) => item.id != a.id,
-            ).stream,
-            neverEmits([aaaa, b]),
-          );
-        });
-      });
-
-      group('when includePredicate is false', () {
-        test('item is not included', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              includePredicate: (item) => item.id != 'a',
-            ).stream,
-            emitsInOrder([
-              [b],
-            ]),
-          );
-        });
-        test(
-            'initially not included item is still listened to and appears after includedPredicate becomes true by item update',
-            () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-              ],
-              includePredicate: (item) => item.name != 'A',
-            ).stream,
-            emitsInOrder([
-              [b],
-              [aa, b],
-            ]),
-          );
-        });
-        test(
-            'initially not included item is still listened to and appears after includedPredicate becomes true by item update',
-            () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(100.milliseconds, [aa, b]),
-              ],
-              includePredicate: (item) => item.name != 'A',
-            ).stream,
-            emitsInOrder([
-              [b],
-              [aa, b],
-            ]),
-          );
-        });
-
-        test(
-            'previously not included item is still listened to and appears after includedPredicate becomes true by item update',
-            () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
-              ],
-              includePredicate: (item) => item.name != 'AA',
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [b],
-              [aaa, b],
-            ]),
-          );
-        });
-        test('eventually not included item appears after includedPredicate becomes true by item update', () {
-          expect(
-            aLiveList(
-              items: [
-                ItemListEvent([a, b]),
-                ItemListEvent.after(100.milliseconds, [aa, b]),
-                ItemListEvent.after(200.milliseconds, [aaa, b]),
-              ],
-              includePredicate: (item) => item.name != 'AA',
-            ).stream,
-            emitsInOrder([
-              [a, b],
-              [b],
-              [aaa, b],
-            ]),
-          );
-        });
-      });
-      group('addItem', () {
-        test('adds item', () {
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a]),
-            ],
-            updates: [
-              ItemUpdateEvent.after(10.milliseconds, id: a.id, item: aa),
-              ItemUpdateEvent.after(20.milliseconds, id: a.id, item: aaa),
-            ],
-          );
-
-          Future<void>.delayed(100.milliseconds).then((value) => liveList.upsertItem(b));
-
-          expect(
-            liveList.stream,
-            emitsInOrder([
-              [a],
-              [aa],
-              [aaa],
-              [aaa, b],
-            ]),
-          );
-        });
-        test('overrides individual item update (update)', () {
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a, b]),
-              ItemListEvent.after(50.milliseconds, [a, bb]),
-            ],
-          );
-
-          Future<void>.delayed(100.milliseconds).then((value) => liveList.upsertItem(b));
-
-          expect(
-            liveList.stream,
-            emitsInOrder([
-              [a, b],
-              [a, bb],
-              [a, b],
-            ]),
-          );
-        });
-      });
-      group('removeItem', () {
-        test('subsequent item updates are ignored', () async {
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a, b]),
-            ],
-            updates: [
-              ItemUpdateEvent.after(100.milliseconds, id: b.id, item: bb),
-              ItemUpdateEvent.after(200.milliseconds, id: b.id, item: bbb),
-              ItemUpdateEvent.after(300.milliseconds, id: a.id, item: aa),
-            ],
-          );
-
-          Future<void>.delayed(const Duration(milliseconds: 50)).then((value) => liveList.removeItem('b'));
-
-          expect(
-            liveList.stream,
-            emitsInOrder([
-              [a, b],
-              [a],
-              [aa],
-            ]),
-          );
-        });
-
-        test('itemUpdated stream is unsubscribed from before it emits', () async {
-          final streamObserver = 200.milliseconds.then(aa);
-
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a]),
-            ],
-            itemUpdatedStream: (id) {
-              return id == a.id ? streamObserver.stream : const Stream.empty();
-            },
-          );
-
-          Future<void>.delayed(const Duration(milliseconds: 100)).then((value) => liveList.removeItem('a'));
-
-          expect(
-            liveList.stream,
-            neverEmits([
-              [aa],
-            ]),
-          );
-          expect(streamObserver.emitCount, neverEmits(1));
-          expect(streamObserver.listenCount, emits(1));
-          expect(streamObserver.listenCount, neverEmits(2));
-          expect(streamObserver.cancelCount, emits(1));
-          expect(streamObserver.cancelCount, neverEmits(2));
-        });
-
-        test('item dependencies are unsubscribed from', () async {
-          final streamObserver = 200.milliseconds.thenTrigger();
-
-          final liveList = aLiveList(
-            items: [
-              ItemListEvent([a]),
-            ],
-            getItemDependencyStreams: (item) => [
-              (
-                (item) => item.foreignId,
-                (foreignId) => foreignId == '1' ? streamObserver.stream : const Stream.empty(),
-              ),
-            ],
-            fetchItem: (id) => aa,
-          );
-
-          Future<void>.delayed(const Duration(milliseconds: 100)).then((value) => liveList.removeItem('a'));
-
-          expect(
-            liveList.stream,
-            neverEmits([
-              [aa],
-            ]),
-          );
-          expect(streamObserver.emitCount, neverEmits(1));
-          expect(streamObserver.listenCount, emits(1));
-          expect(streamObserver.listenCount, neverEmits(2));
-          expect(streamObserver.cancelCount, emits(1));
-          expect(streamObserver.cancelCount, neverEmits(2));
-        });
-      });
-
-      group('getItemDependencyStreams', () {
-        test('should throw when fetchItem is not specified', () {
-          expect(
-            () => aLiveList(
-              getItemDependencyStreams: (item) => [],
-            ),
-            throwsA(isA<ArgumentError>()),
-          );
-        });
-        test('should not throw when fetchItem is also specified', () {
-          expect(
-            () => aLiveList(
-              getItemDependencyStreams: (item) => [],
-              fetchItem: (id) => Future.value(a),
-            ),
-            returnsNormally,
-          );
-        });
-        test(
-          'triggering stream should work if item matches predicate because of items',
-          () async {
+        group('more than 1 trigger while deferring', () {
+          test('deferred item is ignored, fresh item is fetched', () async {
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([aa]),
-              ],
-              dependencyUpdates: [
+              mockFetcher: mockFetcher,
+              explicitTriggerDefinitions: [
                 (
                   (item) => item.foreignId,
-                  [('2', TriggerEvent.after(100.milliseconds))],
+                  {
+                    '1': ModularStream<_Model>([
+                      // 30.milliseconds,
+                      // aa,
+                      // 30.milliseconds,
+                      // aa,
+                      20.milliseconds,
+                      aa,
+                      20.milliseconds,
+                      aa,
+                      20.milliseconds,
+                      aa,
+                      20.milliseconds,
+                      aa,
+                    ]),
+                  },
                 ),
               ],
-              fetchItem: (id) => aaa,
+            );
+            liveList.upsertItem(a);
+
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                await Future.delayed(100.milliseconds);
+                when(() => mockFetcher.fetchItem('a')).thenAnswer((_) async => aaaa);
+                completer.complete(aaa);
+                await completer.future;
+              },
             );
 
             expect(
               liveList.stream,
-              emitsInOrder([
+              neverEmits([
                 [aa],
                 [aaa],
               ]),
             );
-          },
-        );
-        test(
-          'triggering stream should work if item matches predicate after item update',
-          () async {
-            final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              updates: [
-                ItemUpdateEvent.after(100.milliseconds, id: a.id, item: aa),
-                ItemUpdateEvent.after(200.milliseconds, id: a.id, item: aaa),
-                ItemUpdateEvent.after(300.milliseconds, id: a.id, item: aaaa),
-              ],
-              dependencyUpdates: [
-                (
-                  (item) => item.foreignId!,
-                  [('3', TriggerEvent())],
-                ),
-              ],
-              fetchItem: (id) => a,
-            );
-
-            expect(
+            await expectLater(
               liveList.stream,
               emitsInOrder([
                 [a],
-                [aa],
-                [aaa],
                 [aaaa],
-                [a],
               ]),
             );
-          },
-        );
-        test(
-          'triggering stream should work if item matches predicate after item update triggered by dependency',
-          () async {
-            final fetchItem = SequenceReturn<_Model Function(String)>(returnValues: [(_) => aa, (_) => aaaa]);
+          });
 
+          test('when fresh item fails to fetch, deferred item is added nevertheless', () async {
             final liveList = aLiveList(
-              items: [
-                ItemListEvent([a]),
-              ],
-              dependencyUpdates: [
+              mockFetcher: mockFetcher,
+              explicitTriggerDefinitions: [
                 (
                   (item) => item.foreignId,
-                  [
-                    ('1', TriggerEvent.after(100.milliseconds)),
-                    ('2', TriggerEvent.after(100.milliseconds)),
-                  ],
+                  {
+                    '1': ModularStream<_Model>([
+                      30.milliseconds,
+                      aa,
+                      30.milliseconds,
+                      aa,
+                    ]),
+                  },
                 ),
               ],
-              fetchItem: (id) => fetchItem.next()(id),
+            );
+            liveList.upsertItem(a);
+
+            final completer = liveList.deferItemTrigger('a');
+            expect(completer.isRight(), isTrue);
+            completer.fold(
+              (_) => throw 'Expected a completer',
+              (completer) async {
+                await Future.delayed(100.milliseconds);
+                when(() => mockFetcher.fetchItem('a')).thenThrow(Exception('failed'));
+                completer.complete(aaa);
+                await completer.future;
+              },
             );
 
             expect(
               liveList.stream,
-              emitsInOrder([
-                [a],
+              neverEmits([
                 [aa],
                 [aaaa],
               ]),
             );
-          },
-        );
+            await expectLater(
+              liveList.stream,
+              emitsInOrder([
+                [a],
+                [aaa],
+              ]),
+            );
+          });
+        });
       });
-      // group('updateDelegates', () {
-      //   test('should throw when neither getItemTriggerStream nor fetchItem are not specified', () {
-      //     final liveList = aLiveList();
-
-      //     expect(
-      //       () => liveList.deferItemTrigger('a'),
-      //       throwsA(isA<ArgumentError>()),
-      //     );
-      //   });
-      //   test('should throw when getItemTriggerStream is not specified', () {
-      //     final liveList = aLiveList(fetchItem: (_) => a);
-
-      //     expect(
-      //       () => liveList.deferItemTrigger('a'),
-      //       throwsA(isA<ArgumentError>()),
-      //     );
-      //   });
-      //   test('should not throw when both getItemTriggerStream fetchItem are specified', () {
-      //     final liveList = aLiveList(
-      //       fetchItem: (id) => a,
-      //       getItemTriggerStream: (_) => const Stream.empty(),
-      //     );
-
-      //     expect(
-      //       () => liveList.deferItemTrigger('a'),
-      //       returnsNormally,
-      //     );
-      //   });
-      //   test('should update item', () async {
-      //     final liveList = aLiveList(
-      //       items: [
-      //         ItemListEvent([a, b]),
-      //         // ItemListEvent.after(50.milliseconds, [aa, b]),
-      //       ],
-      //       fetchItem: (id) => aaa,
-      //       getItemTriggerStream: (_) => const Stream.empty(),
-      //     );
-
-      //     final completer = liveList.deferItemTrigger('a');
-      //     await Future<void>.delayed(100.milliseconds).then((value) => completer.complete(aaaa));
-
-      //     expectLater(
-      //       liveList.stream,
-      //       emitsInOrder(
-      //         [
-      //           [a, b],
-      //           // [aa, b],
-      //           [aaaa, b],
-      //         ],
-      //       ),
-      //     );
-      //   });
-      // });
     },
-    timeout: const Timeout(testTimeoutAfter),
   );
 }
 
@@ -1482,5 +887,23 @@ class _Model {
   @override
   int get hashCode {
     return id.hashCode ^ name.hashCode ^ foreignId.hashCode;
+  }
+}
+
+ModularStream<Duration> aTriggerStream(List<Duration> items) => ModularStream<Duration>(items);
+ModularStream<T> aModularStream<T>(List<Object> items) => ModularStream<T>(items);
+Stream<T> aStream<T>(List<Object> items) => aModularStream<T>(items).stream;
+
+extension on Duration {
+  Future<void> afterPassed(FutureOr<void> Function() action) => Future<void>.delayed(this).then((_) => action());
+}
+
+extension on Completer<void> {
+  Future<void> get futureIgnoreErrors async {
+    try {
+      await future;
+    } catch (e) {
+      // ignore
+    }
   }
 }

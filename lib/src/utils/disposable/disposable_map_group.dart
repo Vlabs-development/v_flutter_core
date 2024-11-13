@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:v_flutter_core/src/extensions/map_extensions.dart';
 
 class DisposableMapGroup<KeyType, SubKeyType> {
   DisposableMapGroup({this.onDispose});
@@ -67,6 +68,11 @@ class DisposableMapGroup<KeyType, SubKeyType> {
   }
 
   Iterable<SubKeyType> getAllSubKeys() => cleanupCallbacks.values.map((e) => e.keys).expand((e) => e);
+
+  Map<KeyType, Map<SubKeyType, VoidCallback>> filterWithKey(
+    bool Function(KeyType key, Map<SubKeyType, VoidCallback> value) test,
+  ) =>
+      cleanupCallbacks.filterWithKey(test);
 
   void dispose() {
     for (final subMap in cleanupCallbacks.values) {
