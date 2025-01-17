@@ -66,6 +66,17 @@ class TriggerExecutor<ID, T> {
     return Right(completer);
   }
 
+  Future<Completer<T>> asyncDeferItemTrigger(ID id) async {
+    final az = deferItemTrigger(id);
+    return az.fold(
+      (future) async {
+        await future;
+        return asyncDeferItemTrigger(id);
+      },
+      (completer) => completer,
+    );
+  }
+
   Future<void> _handleTrigger(ID id) async {
     final existingCompleter = _completers[id];
 

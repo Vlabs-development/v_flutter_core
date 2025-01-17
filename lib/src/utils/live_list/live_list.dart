@@ -144,6 +144,10 @@ class LiveList<ID, T> {
     return _triggerExecutor.deferItemTrigger(id);
   }
 
+  Future<Completer<T>> asyncDeferItemTrigger(ID id) async {
+    return _triggerExecutor.asyncDeferItemTrigger(id);
+  }
+
   StreamSubscription<MaterializedIterableChanges<T>> _actualizeTriggerSubscriptions(
     Stream<MaterializedIterableChanges<T>> stream,
   ) =>

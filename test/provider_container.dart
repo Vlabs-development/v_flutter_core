@@ -49,7 +49,14 @@ extension X on ProviderContainer {
   Stream<AsyncValue<T>> streamOfAsyncValue<T>(ProviderListenable<AsyncValue<T>> provider) {
     final subject = ReplaySubject<AsyncValue<T>>();
 
-    final subscription = listen(provider, (_, next) => subject.add(next));
+    final subscription = listen(
+      provider,
+      // fireImmediately: true,
+      (previous, next) {
+        print('streamOfAsyncValue___________PREVIOUS: $previous NEXT: $next');
+        subject.add(next);
+      },
+    );
     addTearDown(subscription.close);
     addTearDown(subject.close);
 

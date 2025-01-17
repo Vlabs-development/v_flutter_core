@@ -7,6 +7,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:test/test.dart';
+import 'package:v_flutter_core/src/utils/mutation_provider.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 import 'live_list_test.dart';
@@ -68,12 +69,6 @@ void main() {
             await c.testRead(mutableCommentPod(id: comment1.id).future);
             c.testRead(mutableCommentPod(id: comment1.id).notifier).like();
 
-            // expect(
-            //   stream,
-            //   emitsInOrder([
-            //     equals(_asyncData(MPS(mutationType: null, data: comment1))),
-            //   ]),
-            // );
             expect(
               stream,
               emitsInOrder([
@@ -96,7 +91,8 @@ void main() {
               emitsInOrder([
                 equals(_asyncData(MPS(mutationType: null, data: comment1))),
                 equals(_asyncLoading(MPS(mutationType: CommentMutation.like, data: comment1))),
-                equals(_asyncData(MPS(mutationType: CommentMutation.like, data: comment1.copyWith(content: 'updated')))),
+                equals(_asyncLoading(
+                    MPS(mutationType: CommentMutation.like, data: comment1.copyWith(content: 'updated')))),
                 equals(_asyncData(MPS(mutationType: null, data: comment1.copyWith(likes: 1)))),
               ]),
             );
@@ -109,8 +105,11 @@ void main() {
 }
 
 AsyncValue<MPS<CommentMutation, Comment>> _asyncLoading(MPS<CommentMutation, Comment> data) =>
-    const AsyncLoading<MPS<CommentMutation, Comment>>().copyWithPrevious(AsyncData(data));
-    
+    const AsyncLoading<MPS<CommentMutation, Comment>>().copyWithPrevious(
+      isRefresh: false,
+      AsyncData(data),
+    );
+
 AsyncValue<MPS<CommentMutation, Comment>> _asyncData(MPS<CommentMutation, Comment> data) => AsyncData(data);
 
 @riverpod
@@ -125,10 +124,7 @@ LiveList<String, Comment> commentLiveList(Ref ref) {
       fireImmediately: true,
       skipLoadingOnRefresh: false,
     ),
-    // getItemTriggerStream: (id) => ref.read(P.commentService).onCommentUpdatedId(id: id),
-    // fetchItem: (id) => ref.read(P.commentService).getComment(id: id),
-    // itemCreatedStream: ref.streamOfAsyncData(_commentInNewMessagesProvider),
-    // listenPredicate: (a) => !a.isCanceled && !a.isDeclined && !a.isExpired && !a.isAbandoned,
+    fetchItem: (id) async => comment1,
   );
 
   ref.onDispose(() => liveList.dispose());
@@ -144,13 +140,13 @@ enum CommentMutation { edit, like }
 class MutableComment extends _$MutableComment with MutationProvider<CommentMutation, Comment> {
   @override
   Stream<MPS<CommentMutation, Comment>> build({required String id}) {
-    ref.debugPrintState(extractValue: (a) => a.toString(), name: '__ MutableComment');
-    
+    // ref.debugPrintState(extractValue: (a) => a.toString(), name: '__ MutableComment');
+
     return selectItemStream;
   }
 
   @override
-  HandshakeCompleter<Comment>? get completer => ref.read(commentLiveListPod).deferItemTrigger(id);
+  Future<Completer<Comment>>? get completer => ref.read(commentLiveListPod).asyncDeferItemTrigger(id);
 
   @override
   ProviderListenable<Future<Comment?>> get selectItem {
@@ -160,7 +156,7 @@ class MutableComment extends _$MutableComment with MutationProvider<CommentMutat
   Future<Either<MutationFailure, Comment>> like() => mutate(
         mutationType: CommentMutation.like,
         mutate: (c) async {
-          await Future<void>.delayed(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 800));
           return c.copyWith(likes: c.likes + 1);
         },
       );
@@ -188,22 +184,22 @@ extension AsyncValueRefX<T> on Ref<AsyncValue<T>> {
 
     void printValue(AsyncValue<T>? asyncValue, {required String prefix, required String arrow}) {
       if (asyncValue == null) {
-        print('$prefix　　 $name $arrow no value');
+        print('$prefix　　$name $arrow no value');
         return;
       }
 
       asyncValue.when(
-        data: (data) => print('$prefix　🟢 $name $arrow ${extractValue(data)}'),
+        data: (data) => print('$prefix　🟢$name $arrow ${extractValue(data)}'),
         error: (error, stackTrace) => print('$prefix　🔴 $name $arrow $error'),
         loading: () {
           if (asyncValue.isInitialLoading) {
-            print('$prefix🔄🌱 $name $arrow initialLoading');
+            print('$prefix🔄🌱$name $arrow initialLoading');
           }
           if (asyncValue.isRefreshing) {
             print('$prefix🔄🫥 $name $arrow ${nullableExtractValue(asyncValue.actualValueOrNull)}');
           }
           if (asyncValue.isReloading) {
-            print('$prefix🔄🔗 $name $arrow ${nullableExtractValue(asyncValue.actualValueOrNull)}');
+            print('$prefix🔄🔗$name $arrow ${nullableExtractValue(asyncValue.actualValueOrNull)}');
           }
         },
         skipLoadingOnRefresh: false,
@@ -220,15 +216,15 @@ extension AsyncValueRefX<T> on Ref<AsyncValue<T>> {
     });
     print('LIFECYCLE 🌱 $name');
     onDispose(() => print('LIFECYCLE 🗑 $name ($listenerCount)'));
-    onCancel(() => print('LIFECYCLE ❌ $name ($listenerCount)'));
-    onResume(() => print('LIFECYCLE 🔊 $name ($listenerCount)'));
-    onAddListener(() {
-      listenerCount++;
-      print('LIFECYCLE 🦻 $name ($listenerCount)');
-    });
-    onRemoveListener(() {
-      listenerCount--;
-      print('LIFECYCLE 🦻❌ $name ($listenerCount)');
-    });
+    // onCancel(() => print('LIFECYCLE ❌ $name ($listenerCount)'));
+    // onResume(() => print('LIFECYCLE 🔊 $name ($listenerCount)'));
+    // onAddListener(() {
+    //   listenerCount++;
+    //   print('LIFECYCLE 🦻 $name ($listenerCount)');
+    // });
+    // onRemoveListener(() {
+    //   listenerCount--;
+    //   print('LIFECYCLE 🦻❌ $name ($listenerCount)');
+    // });
   }
 }

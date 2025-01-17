@@ -93,7 +93,7 @@ extension MPSAsyncValueExtension<MT, T> on AsyncValue<MPS<MT, T>> {
 
 // ignore: invalid_use_of_internal_member
 mixin MutationProvider<MT, T> on BuildlessAutoDisposeStreamNotifier<MPS<MT, T>> {
-  HandshakeCompleter<T>? get completer;
+  Future<Completer<T>>? get completer;
 
   ProviderListenable<Future<T?>> get selectItem;
 
@@ -105,35 +105,59 @@ mixin MutationProvider<MT, T> on BuildlessAutoDisposeStreamNotifier<MPS<MT, T>> 
       .whereNotNull()
       .doOnData(
         (event) => timedDP(
-          '💨💨 Syncronized an item from source ${event.mutationType == null ? '' : "while mutation: ${event.mutationType} is in progress"}',
+          '💨💨 Syncronized an item from source ${event.mutationType == null ? '' : "while mutation: ${event.mutationType} is in progress"}: ${event.data}',
         ),
       );
 
   MPS<MT, T>? asMutationState(T item) {
-    final currentMutationType = state.valueOrNull?.mutationType;
+    final currentMutationType = state.actualValueOrNull?.mutationType;
 
-    return state.map(
-      data: (data) => MPS(mutationType: currentMutationType, data: item),
-      loading: (loading) {
-        if (loading.hasValue) {
-          state = AsyncLoading<MPS<MT, T>>().copyWithPrevious(
+    final newState = state.when(
+      data: (_) {
+        return AsyncData(MPS(mutationType: currentMutationType, data: item));
+      },
+      loading: () {
+        // if (state.isRefreshing) {
+        //   return null;
+        // }
+        if (state.hasValue) {
+          return AsyncLoading<MPS<MT, T>>().copyWithPrevious(
             AsyncData(MPS(mutationType: currentMutationType, data: item)),
           );
         } else {
-          state = AsyncData(MPS(mutationType: currentMutationType, data: item));
+          return AsyncData(MPS(mutationType: currentMutationType, data: item));
         }
-        return null;
       },
-      error: (error) => MPS(mutationType: currentMutationType, data: item),
+      error: (_, __) => state = AsyncData(MPS(mutationType: currentMutationType, data: item)),
     );
+    debugPrint(
+      '_____________________ NEW: $item \n_____________________ WAS: $state \n_____________________ NOW: $newState',
+    );
+
+    state = newState;
+    return null;
+    // return state.map(
+    //   data: (data) => MPS(mutationType: currentMutationType, data: item),
+    //   loading: (loading) {
+    //     if (loading.hasValue) {
+    //       state = AsyncLoading<MPS<MT, T>>().copyWithPrevious(
+    //         AsyncData(MPS(mutationType: currentMutationType, data: item)),
+    //       );
+    //     } else {
+    //       state = AsyncData(MPS(mutationType: currentMutationType, data: item));
+    //     }
+    //     return null;
+    //   },
+    //   error: (error) => MPS(mutationType: currentMutationType, data: item),
+    // );
   }
 
   Future<Either<MutationFailure, T>> mutate({
     required MT mutationType,
     required Future<T> Function(T) mutate,
-    HandshakeCompleter<T>? completer,
+    Completer<T>? completer,
   }) async {
-    final currentData = state.valueOrNull?.data;
+    final currentData = state.actualValueOrNull?.data;
     if (state.isLoading) {
       return Left(MutationWhileLoading());
     }
@@ -142,15 +166,16 @@ mixin MutationProvider<MT, T> on BuildlessAutoDisposeStreamNotifier<MPS<MT, T>> 
       return Left(MutationWithoutInitialData());
     }
 
-    state = AsyncLoading<MPS<MT, T>>().copyWithPrevious(
-      AsyncData(MPS<MT, T>(mutationType: mutationType, data: currentData)),
-    );
+    final newData = AsyncData(MPS<MT, T>(mutationType: mutationType, data: currentData));
+    debugPrint('>>>>>>>> newData: $newData');
+    state = AsyncLoading<MPS<MT, T>>().copyWithPrevious(newData);
+    debugPrint('>>>>>>>> state: $state');
 
     final taskEither = TaskEither<MutationFailure, T>.tryCatch(
       () => mutate(currentData),
       (error, stackTrace) => MutationFailed(error, stackTrace),
     );
-    final _completer = completer ?? this.completer;
+    final _completer = completer ?? await this.completer;
 
     final mutateResult = await taskEither.run();
 
@@ -167,7 +192,7 @@ mixin MutationProvider<MT, T> on BuildlessAutoDisposeStreamNotifier<MPS<MT, T>> 
       },
       (mutatedData) async {
         if (_completer != null) {
-          await _completer.completeAwaitingHandshake(mutatedData);
+          _completer.complete(mutatedData);
         }
         state = AsyncData(MPS(mutationType: null, data: mutatedData));
         return Right(mutatedData);

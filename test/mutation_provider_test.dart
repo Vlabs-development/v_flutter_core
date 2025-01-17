@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
@@ -5,6 +7,7 @@ import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
+import 'package:v_flutter_core/src/utils/mutation_provider.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 import 'live_list_test.dart';
@@ -131,7 +134,7 @@ class MutableComment extends _$MutableComment with MutationProvider<CommentMutat
   Stream<MPS<CommentMutation, Comment>> build({required String id}) => selectItemStream;
 
   @override
-  HandshakeCompleter<Comment>? get completer => null;
+  Future<Completer<Comment>>? get completer => null;
 
   @override
   ProviderListenable<Future<Comment?>> get selectItem {

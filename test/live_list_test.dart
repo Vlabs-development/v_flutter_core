@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import 'package:time/time.dart';
-import 'package:v_flutter_core/src/utils/live_list/definitions.dart';
 import 'package:v_flutter_core/v_flutter_core.dart';
 
 import 'utils/modular_stream.dart';
@@ -572,7 +571,7 @@ void main() {
           });
         });
         group('ListTriggerDefinition', () {
-          test('Fetches items that apply the defintin', () async {
+          test('Fetches items that apply the definition', () async {
             when(() => mockFetcher.fetchItems(['a', 'b'])).thenAnswer((_) async => [a, bb]);
             when(() => mockFetcher.fetchItems(['b'])).thenAnswer((_) async => [b]);
 
