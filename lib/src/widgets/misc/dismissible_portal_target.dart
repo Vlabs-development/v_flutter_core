@@ -56,7 +56,11 @@ class DismissiblePortalTarget extends HookWidget {
                           useOnChangeNotifierValueChanged(
                             controller,
                             select: (notifier) => notifier.offset,
-                            onChanged: (offset) => onOutsideScroll?.call(),
+                            onChanged: (offset) {
+                              if (barrierDismissible) {
+                                onOutsideScroll?.call();
+                              }
+                            },
                           );
                           return SizedBox(
                             width: MediaQuery.of(context).size.width,
