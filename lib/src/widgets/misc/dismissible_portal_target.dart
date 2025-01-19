@@ -2,7 +2,7 @@ import 'package:entry/entry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_portal/flutter_portal.dart';
-import 'package:v_flutter_core/src/hooks/use_scroll_notification_observer.dart';
+import 'package:v_flutter_core/src/hooks/change_notifier_hooks.dart';
 import 'package:v_flutter_core/src/widgets/misc/always_scrollbar.dart';
 
 class DismissiblePortalTarget extends HookWidget {
@@ -53,10 +53,11 @@ class DismissiblePortalTarget extends HookWidget {
                       controller: controller,
                       child: HookBuilder(
                         builder: (context) {
-                          useScrollNotificationObserver(
-                            context,
-                            handler: (notification) {
-                              if (notification is UserScrollNotification) {
+                          useOnChangeNotifierValueChanged(
+                            controller,
+                            select: (notifier) => notifier.offset,
+                            onChanged: (offset) {
+                              if (barrierDismissible) {
                                 onOutsideScroll?.call();
                               }
                             },

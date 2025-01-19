@@ -14,7 +14,7 @@ class PortalDialog extends HookWidget {
     this.direction,
   });
 
-  final Widget Function(bool isOpen, void Function(bool) setIsOpen) portalFollowerBuilder;
+  final Widget Function(bool isOpen, void Function(bool) setIsOpen, Anchor anchor) portalFollowerBuilder;
   final bool barrierDismissible;
   final Anchor? anchor;
   final BoxDecoration? barrierDecoration;
@@ -26,7 +26,7 @@ class PortalDialog extends HookWidget {
     final globalKey = useGlobalKey<State<StatefulWidget>>();
     final isMenuOpen = useState(false);
 
-    final effectiveAnchor = () {
+    final Anchor effectiveAnchor = () {
       if (anchor != null) {
         return anchor!;
       }
@@ -45,6 +45,7 @@ class PortalDialog extends HookWidget {
         builder: (context) => portalFollowerBuilder(
           isMenuOpen.value,
           (bool value) => isMenuOpen.value = value,
+          effectiveAnchor,
         ),
       ),
       visible: isMenuOpen.value,
