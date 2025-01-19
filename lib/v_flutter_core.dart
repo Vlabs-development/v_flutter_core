@@ -4,6 +4,7 @@ export 'src/extensions/bool_extensions.dart';
 export 'src/extensions/build_context_extensions.dart';
 export 'src/extensions/function_extensions.dart';
 export 'src/extensions/global_key_extensions.dart';
+export 'src/extensions/kotlin_scoping_extensions.dart';
 export 'src/extensions/list_extensions.dart';
 export 'src/extensions/map_extensions.dart';
 export 'src/extensions/ref_extensions.dart';
