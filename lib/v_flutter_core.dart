@@ -58,6 +58,7 @@ export 'src/widgets/layout/flex/gap_row.dart';
 export 'src/widgets/layout/flex/separated_column.dart';
 export 'src/widgets/layout/flex/separated_flex.dart';
 export 'src/widgets/layout/flex/separated_row.dart';
+export 'src/widgets/layout/ignore_horizontal_padding_pivot.dart';
 export 'src/widgets/layout/size_class_layout.dart';
 export 'src/widgets/misc/always_scrollbar.dart';
 export 'src/widgets/misc/debug_container.dart';
