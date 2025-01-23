@@ -1,3 +1,10 @@
+## 0.0.17
+
+feat: kotlin-like scoping functions
+fix: only invoke `onOutsideScroll` if `barrierDismissible` in `DismissiblePortalTarget`
+feat: expose `anchor` to `portalFollowerBuilder`
+fix: detect DismissiblePortalTarget's barrier scroll differently
+
 ## 0.0.16
 
 feat: add ItemListStreamBehavior
