@@ -1,3 +1,7 @@
+## 0.0.18
+
+feat: IgnoreHorizontalPaddingPivot
+
 ## 0.0.17
 
 feat: kotlin-like scoping functions
