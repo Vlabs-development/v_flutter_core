@@ -8,14 +8,14 @@ typedef ChildWrapper = Widget Function({required Widget child});
 /// paddings that the are imposed on them after the pivot.
 /// ```dart
 ///IgnoreHorizontalPaddingPivot(
-///  builder: (context, ignorePaddingBuilder) {
+///  builder: (context, ignorePadding) {
 ///    return Padding(
 ///      padding: const EdgeInsets.only(left: 16, right: 24),
 ///      child: Column(
 ///        children: [
 ///          Header(),
 ///          Body(),
-///          ignorePaddingBuilder(child: Divider()),
+///          ignorePadding(child: Divider()),
 ///          Footer(),
 ///        ],
 ///      ),
@@ -29,7 +29,7 @@ class IgnoreHorizontalPaddingPivot extends StatelessWidget {
     super.key,
   });
 
-  final Widget Function(BuildContext context, ChildWrapper ignorePaddingBuilder) builder;
+  final Widget Function(BuildContext context, ChildWrapper ignorePadding) builder;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
