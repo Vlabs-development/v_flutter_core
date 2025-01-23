@@ -24,6 +24,8 @@ typedef ChildWrapper = Widget Function({required Widget child});
 ///  },
 ///);
 ///```
+/// Do not overuse this widget. If you find yourself needing this for more than just cosmetics (like `Divider`),
+/// then it might be worth revisiting the widget's layout hierarchy.
 class IgnoreHorizontalPaddingPivot extends StatelessWidget {
   const IgnoreHorizontalPaddingPivot({
     required this.builder,
