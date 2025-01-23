@@ -1,3 +1,4 @@
+import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/material.dart';
 import 'package:v_flutter_core/src/widgets/misc/size_reporter.dart';
 
@@ -32,28 +33,32 @@ class IgnoreHorizontalPaddingPivot extends StatelessWidget {
   final Widget Function(BuildContext context, ChildWrapper ignoreHorizontalPadding) builder;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => SizeReporter.builder(
-          builder: (parentSize, parentOffset) => builder(
-            context,
-            ({required child}) => SizeReporter.builder(
-              builder: (size, offset) {
-                final parentDx = parentOffset?.dx ?? 0;
-                final parentWidth = parentSize?.width ?? 0;
-                final dx = offset?.dx ?? 0;
-                final width = size?.width ?? 0;
-                final translation = (parentDx + parentWidth / 2) - (dx + width / 2);
+  Widget build(BuildContext context) => DeferredPointerHandler(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SizeReporter.builder(
+            builder: (parentSize, parentOffset) => builder(
+              context,
+              ({required child}) => SizeReporter.builder(
+                builder: (size, offset) {
+                  final parentDx = parentOffset?.dx ?? 0;
+                  final parentWidth = parentSize?.width ?? 0;
+                  final dx = offset?.dx ?? 0;
+                  final width = size?.width ?? 0;
+                  final translation = (parentDx + parentWidth / 2) - (dx + width / 2);
 
-                return IntrinsicHeight(
-                  child: OverflowBox(
-                    maxWidth: parentSize?.width ?? constraints.maxWidth,
-                    child: Transform.translate(
-                      offset: Offset(translation, 0),
-                      child: child,
+                  return IntrinsicHeight(
+                    child: OverflowBox(
+                      maxWidth: parentSize?.width ?? constraints.maxWidth,
+                      child: Transform.translate(
+                        offset: Offset(translation, 0),
+                        child: DeferPointer(
+                          child: child,
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ),
