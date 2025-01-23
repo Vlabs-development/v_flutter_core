@@ -43,6 +43,10 @@ class SizeReporter extends HookWidget {
 
     void _actualizeValuesAndInvokeCallback() {
       if (context.mounted) {
+        if (globalKey.size != size.value || globalKey.offset != offset.value) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _actualizeValuesAndInvokeCallback());
+        }
+
         size.value = globalKey.size;
         offset.value = globalKey.offset;
 

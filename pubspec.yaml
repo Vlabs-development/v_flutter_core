@@ -9,6 +9,7 @@ environment:
 
 dependencies:
   collection: ^1.17.1
+  defer_pointer: ^0.0.2
   easy_debounce: ^2.0.3
   entry: ^1.0.0
   flutter:
