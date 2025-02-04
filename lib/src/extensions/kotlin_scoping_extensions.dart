@@ -19,7 +19,7 @@ extension ScopingFunctionExtensions<T> on T {
 }
 
 extension NullSafeScopingFunctionExtensions<T> on T? {
-  R? maybeLet<R>(R Function(T it) block) {
+  R? maybeLet<R>(R? Function(T it) block) {
     final value = this;
     return value != null ? block(value) : null;
   }
