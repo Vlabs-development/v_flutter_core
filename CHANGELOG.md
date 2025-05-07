@@ -1,3 +1,7 @@
+## 0.0.19
+
+chore: bump flutter to 3.29.2 and other dependencies
+
 ## 0.0.18
 
 feat: IgnoreHorizontalPaddingPivot
