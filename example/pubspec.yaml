@@ -14,7 +14,7 @@ dependencies:
 
   cupertino_icons: ^1.0.2
   hooks_riverpod: ^2.6.1
-  flutter_hooks: ^0.20.3
+  flutter_hooks: ^0.21.2
   v_flutter_core:
     path: "../"
   reactive_forms: ^17.0.1
