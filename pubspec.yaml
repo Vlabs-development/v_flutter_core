@@ -4,8 +4,8 @@ repository: https://github.com/Vlabs-development/v_flutter_core
 version: 0.0.18
 
 environment:
-  sdk: ">=3.5.0 <4.0.0"
-  flutter: ">=3.24.3"
+  sdk: ">=3.6.2 <4.0.0"
+  flutter: ">=3.29.2"
 
 dependencies:
   collection: ^1.17.1
